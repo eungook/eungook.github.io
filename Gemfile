@@ -31,3 +31,4 @@ gem "wdm", "~> 0.1.1", :platforms => [:mingw, :x64_mingw, :mswin]
 # https://github.com/jekyll/jekyll/issues/8523
 # I think you want bundle add webrick.
 # gem "webrick"
+gem "webrick", "~> 1.7"
