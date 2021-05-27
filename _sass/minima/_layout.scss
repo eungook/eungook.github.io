@@ -242,6 +242,8 @@
   margin-bottom: $spacing-unit;
 
   h2 {
+    margin-top: $spacing-unit * 1.66;
+
     @include relative-font-size(2);
 
     @include media-query($on-laptop) {
