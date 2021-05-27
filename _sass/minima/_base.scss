@@ -169,6 +169,11 @@ pre {
   }
 }
 
+// markdown에는 <mark>가 없다. 하여 대신 <code>를 사용한다.
+code.language-plaintext {
+  word-break: break-all;
+}
+
 
 /**
  * Wrapper
