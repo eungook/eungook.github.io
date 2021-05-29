@@ -21,11 +21,13 @@
 title: eungook.github.io
 author: 이은국
 email: yi.eungook@gmail.com
-description: >- # this means to ignore newlines until "baseurl:"
-  웹 개발자(프로그래머) 이은국 블로그 입니다. 변수명은 세 단어 이상으로 길어지지 않으려고 합니다.
+# description: >- # this means to ignore newlines until "baseurl:"
+#   웹 개발자(프로그래머) 이은국 블로그 입니다. 변수명은 세 단어 이상으로 길어지지 않으려고 합니다.
 #   Write an awesome description for your new site here. You can edit this
 #   line in _config.yml. It will appear in your document head meta (for
 #   Google search results) and in your feed.xml site description.
+description2: >- # this means to ignore newlines until "baseurl:"
+  웹 개발자(프로그래머) 이은국 블로그 입니다. 변수명은 세 단어 이상으로 길어지지 않으려고 합니다.
 baseurl: "" # the subpath of your site, e.g. /blog
 # url: "" # the base hostname & protocol for your site, e.g. http://example.com
 url: "https://eungook.github.io"
