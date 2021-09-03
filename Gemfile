@@ -32,3 +32,7 @@ gem "wdm", "~> 0.1.1", :platforms => [:mingw, :x64_mingw, :mswin]
 # I think you want bundle add webrick.
 # gem "webrick"
 gem "webrick", "~> 1.7"
+
+# https://github.com/keithmifsud/jekyll-target-blank
+# Automatically adds a target="_blank" rel="noopener noreferrer" attribute to all external links in Jekyll's content plus several other automation features for the external links.
+gem 'jekyll-target-blank'
