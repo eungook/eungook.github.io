@@ -33,6 +33,7 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://eungook.github.io"
 twitter_username: _______eungook
 github_username: eungook
+codepen_username: _______eungook
 
 # Build settings
 theme: minima

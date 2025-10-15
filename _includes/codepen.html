@@ -1,0 +1,11 @@
+{% assign username = include.username %}
+{% unless username %}
+{% assign username = site.codepen_username %}
+{% endunless %}
+
+<p class="codepen" data-height="300" data-default-tab="css,result" data-slug-hash="{{ include.hash }}" data-pen-title="{{ include.title }}" data-user="{{ username }}" style="height: 300px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid; margin: 1em 0; padding: 1em;">
+  <span>See the Pen <a href="https://codepen.io/{{ username }}/pen/{{ include.hash }}">
+  {{ include.title }}</a> by {{ username }} (<a href="https://codepen.io/{{ username }}">@{{ username }}</a>)
+  on <a href="https://codepen.io">CodePen</a>.</span>
+</p>
+<script async src="https://public.codepenassets.com/embed/index.js"></script>
