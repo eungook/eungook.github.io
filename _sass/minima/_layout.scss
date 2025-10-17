@@ -274,6 +274,18 @@
   }
 }
 
+.post-subtitle {
+  @include relative-font-size(1.625);
+  letter-spacing: -1px;
+  line-height: 1;
+  font-weight: 200;
+  color: #555;
+
+  @include media-query($on-laptop) {
+    @include relative-font-size(1.375);
+  }
+}
+
 .post-content {
   margin-bottom: $spacing-unit;
 
@@ -281,6 +293,8 @@
 
   h2 {
     @include relative-font-size(1.75);
+
+    margin-top: $spacing-unit * 1.66;
 
     @media screen and (min-width: $on-large) {
       @include relative-font-size(2);
