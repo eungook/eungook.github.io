@@ -51,8 +51,10 @@ minima:
 
 plugins:
   - jekyll-feed
-  # - jekyll-remote-theme
   - jekyll-toc
+  # 참고: jekyll-toc는 gh pages에서 지원하지 않는다.
+  # - https://pages.github.com/versions.json
+  # - 하여 직접 jekyll build 이후 push한다.
   - jekyll-target-blank
 
 defaults:
