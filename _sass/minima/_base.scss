@@ -65,7 +65,7 @@ main {
  * Images
  */
 img {
-  max-width: 100%;
+  max-width: 640px;
   vertical-align: middle;
 }
 
@@ -144,7 +144,7 @@ blockquote {
   color: $brand-color;
   border-left: 4px solid $border-color-01;
   padding-left: $spacing-unit * .5;
-  margin-top: $spacing-unit;
+  margin-top: $spacing-unit * 0.5;
   margin-bottom: $spacing-unit;
   @include relative-font-size(1.05);
   font-style: italic;

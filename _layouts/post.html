@@ -29,6 +29,10 @@ layout: base
         {% endfor %}
       </div>
       {%- endif %}
+
+      {% if page.subtitle %}
+        <p class="post-subtitle">{{ page.subtitle | escape }}</p>
+      {% endif %}
     </div>
   </header>
 
