@@ -36,3 +36,4 @@ gem "webrick", "~> 1.7"
 # https://github.com/keithmifsud/jekyll-target-blank
 # Automatically adds a target="_blank" rel="noopener noreferrer" attribute to all external links in Jekyll's content plus several other automation features for the external links.
 gem 'jekyll-target-blank'
+gem "jekyll-toc", "~> 0.19.0"
