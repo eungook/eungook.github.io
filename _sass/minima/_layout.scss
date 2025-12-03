@@ -438,23 +438,27 @@
 /**
  * jekyll-toc
  */
-.section-nav {
-  list-style-type: none;
-  background-color: #fff;
-  margin: 5px 0;
-  padding: 10px 30px;
-  border: 1px solid #e8e8e8;
-  border-radius: 3px;
+#table-of-contents {
+  margin-bottom: $spacing-unit * 3.0;
 
-  ul {
+  .section-nav {
     list-style-type: none;
-  }
-
-  .toc-h2 + .toc-h2 {
-    margin-top: 10px;
-  }
-
-  @media screen and (max-width: $on-medium) {
-    display: none;
+    background-color: #fff;
+    margin: 5px 0;
+    padding: 10px 30px;
+    border: 1px solid #e8e8e8;
+    border-radius: 3px;
+  
+    ul {
+      list-style-type: none;
+    }
+  
+    .toc-h2 + .toc-h2 {
+      margin-top: 10px;
+    }
+  
+    @media screen and (max-width: $on-medium) {
+      display: none;
+    }
   }
 }
