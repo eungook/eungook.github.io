@@ -67,6 +67,10 @@ main {
 img {
   max-width: 640px;
   vertical-align: middle;
+
+  @media screen and (max-width: $on-medium) {
+    max-width: 100%;
+  }
 }
 
 
