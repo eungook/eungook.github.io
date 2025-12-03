@@ -36,12 +36,8 @@ layout: base
     </div>
   </header>
 
-  <div id="table-of-contents">
-    {{ content | toc_only }}
-  </div>
-
   <div class="post-content e-content" itemprop="articleBody">
-    {{ content }}
+    {{ content | toc }}
   </div>
 
   <script src="https://utteranc.es/client.js" repo="eungook/eungook.github.io" issue-term="pathname"
