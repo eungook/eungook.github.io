@@ -1,0 +1,764 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://eungook.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://eungook.github.io/" rel="alternate" type="text/html" /><updated>2025-12-03T11:37:55+09:00</updated><id>https://eungook.github.io/feed.xml</id><title type="html">eungook.github.io</title><subtitle>Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.
+</subtitle><author><name>이은국</name></author><entry><title type="html">Next.js에서 깜박임 없이 다크모드 적용하기</title><link href="https://eungook.github.io/2025/12/03/1.html" rel="alternate" type="text/html" title="Next.js에서 깜박임 없이 다크모드 적용하기" /><published>2025-12-03T10:55:00+09:00</published><updated>2025-12-03T10:55:00+09:00</updated><id>https://eungook.github.io/2025/12/03/1</id><content type="html" xml:base="https://eungook.github.io/2025/12/03/1.html"><![CDATA[<h2 id="1-먼저-알아두기">1. 먼저 알아두기</h2>
+
+<h3 id="시스템-세팅을-통해-구현하는-방법">시스템 세팅을 통해 구현하는 방법</h3>
+<p>CSS 미디어 쿼리의 <a href="https://developer.mozilla.org/ko/docs/Web/CSS/@media/prefers-color-scheme">@media (prefers-color-scheme: dark)</a>를 사용하는 것으로 가장 간단히 구현할 수 있습니다.</p>
+
+<p class="codepen" data-height="300" data-default-tab="css,result" data-slug-hash="JoGazRW" data-pen-title="dark-mode-1" data-user="_______eungook" style="height: 300px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid; margin: 1em 0; padding: 1em;">
+  <span>See the Pen <a href="https://codepen.io/_______eungook/pen/JoGazRW">
+  dark-mode-1</a> by _______eungook (<a href="https://codepen.io/_______eungook">@_______eungook</a>)
+  on <a href="https://codepen.io">CodePen</a>.</span>
+</p>
+<script async="" src="https://public.codepenassets.com/embed/index.js"></script>
+
+<h3 id="버튼을-통해-구현하는-방법">버튼을 통해 구현하는 방법</h3>
+<p>CSS의 클래스를 통해 간단히 구현할 수 있고, 초기값은 <a href="https://developer.mozilla.org/ko/docs/Web/API/Window/matchMedia">Window.matchMedia</a>를 통해 확인할 수 있습니다.</p>
+
+<p class="codepen" data-height="300" data-default-tab="html,result" data-slug-hash="KwVxEgO" data-pen-title="dark-mode-2" data-user="_______eungook" style="height: 300px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid; margin: 1em 0; padding: 1em;">
+  <span>See the Pen <a href="https://codepen.io/_______eungook/pen/KwVxEgO">
+  dark-mode-2</a> by _______eungook (<a href="https://codepen.io/_______eungook">@_______eungook</a>)
+  on <a href="https://codepen.io">CodePen</a>.</span>
+</p>
+<script async="" src="https://public.codepenassets.com/embed/index.js"></script>
+
+<h2 id="2-깜박임-없이-다크모드-적용하기">2. 깜박임 없이 다크모드 적용하기</h2>
+
+<p>여기서부터 조금 신경을 써야 합니다.<br />
+위에서 확인했듯, 시스템 세팅이 아닌 버튼을 통해 다크모드를 적용하려면 최초 스크립트의 실행이 필요합니다.</p>
+
+<p>이 때 스크립트의 실행이 느리면 화면에서 <a href="https://en.wikipedia.org/wiki/Flash_of_unstyled_content">깜박임</a>을 사용자가 느낄 수 있습니다.<br />
+먼저 말하자면 <code class="language-plaintext highlighter-rouge">useEffect</code>에서 호출하는 스크립트는 정말 느립니다!</p>
+
+<h3 id="스크립트-실행-속도-비교">스크립트 실행 속도 비교</h3>
+<p>Next.js, SSR 기준, 스크립트 실행 속도를 비교해보면 다음과 같습니다.</p>
+<blockquote>
+  <ol>
+    <li><code class="language-plaintext highlighter-rouge">&lt;script&gt;</code></li>
+    <li>next/script, <code class="language-plaintext highlighter-rouge">&lt;Script strategy="beforeInteractive"&gt;</code></li>
+    <li>next/script, <code class="language-plaintext highlighter-rouge">&lt;Script strategy="afterInteractive"&gt;</code></li>
+    <li>클라이언트 컴포넌트, <code class="language-plaintext highlighter-rouge">useEffect</code></li>
+    <li>next/script, <code class="language-plaintext highlighter-rouge">&lt;Script strategy="lazyOnload"&gt;</code></li>
+  </ol>
+</blockquote>
+
+<p>즉 일반 <code class="language-plaintext highlighter-rouge">&lt;script&gt;</code>로 구현하는 것이 가장 실행이 빠릅니다. (약간 당연한 말이네요);;<br />
+코드로 구현해보면 다음과 같습니다.</p>
+
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Next.js, layout.tsx</span>
+<span class="k">export</span> <span class="k">default</span> <span class="kd">function</span> <span class="nf">RootLayout</span><span class="p">({</span> <span class="nx">children</span> <span class="p">}:</span> <span class="nx">Readonly</span><span class="o">&lt;</span><span class="p">{</span> <span class="na">children</span><span class="p">:</span> <span class="nx">React</span><span class="p">.</span><span class="nx">ReactNode</span> <span class="p">}</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return </span><span class="p">(</span>
+    <span class="p">&lt;</span><span class="nt">html</span> <span class="na">lang</span><span class="p">=</span><span class="s">"en"</span> <span class="na">suppressHydrationWarning</span><span class="p">=</span><span class="si">{</span><span class="kc">true</span><span class="si">}</span><span class="p">&gt;</span>
+      <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">script</span><span class="p">&gt;</span><span class="si">{</span><span class="s2">`
+          (() =&gt; {
+          	const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          	if (isDark) {
+	            document.documentElement.classList.add('dark');
+          	}
+          )();
+        `</span><span class="si">}</span><span class="p">&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+        <span class="si">{</span><span class="nx">children</span><span class="si">}</span>
+      <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+    <span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+  <span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<h3 id="주의해야-할-점">주의해야 할 점</h3>
+
+<p>먼저 <code class="language-plaintext highlighter-rouge">&lt;html&gt;</code>에 <code class="language-plaintext highlighter-rouge">suppressHydrationWarning={true}</code>가 필요합니다.<br />
+<a href="https://developer.mozilla.org/ko/docs/Web/API/Element/classList">Element.classList.add</a>를 하는 과정에서 <a href="https://react.dev/reference/react-dom/client/hydrateRoot#suppressing-unavoidable-hydration-mismatch-errors">React의 hydration mismatch</a>가 발생할 수 밖에 없기 때문입니다.</p>
+
+<p>그리고 <code class="language-plaintext highlighter-rouge">&lt;script&gt;</code>의 내용은 <a href="https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Template_literals">템플릿 리터럴</a>로 작성해줘야 의도대로 동작합니다.<br />
+템플릿 리터럴 없이 작성할 경우 태그의 내용이 JSX의 문법으로 동작하게 되어<br />
+줄내림이 표현되지 않아 주석(<code class="language-plaintext highlighter-rouge">//</code>) 이후 내용이 실행되지 않거나,<br />
+중괄호(<code class="language-plaintext highlighter-rouge">{}</code>)가 의도와 달리 해석되는 등의 에러가 발생합니다.</p>
+
+<h3 id="실행속도-비교하는-방법">실행속도 비교하는 방법</h3>
+
+<p>구글 크롬 개발자 도구의 퍼포먼스에 있는 녹화 기능을 통해 직접 확인해볼 수 있습니다.<br />
+확인하기 쉽도록 CPU 쓰로틀링을 x4 정도 걸고 녹화하는 것을 추천합니다.</p>
+
+<p><img src="/images/2025-12-03-1-dark-mode-fast.png" alt="2025-11-05-1-dark-mode-fast" /></p>
+
+<p><em><code class="language-plaintext highlighter-rouge">&lt;script&gt;</code>, DCL(=<a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event">DOMContentLoaded</a>)에서 적용된 경우.. 약 0.3초</em></p>
+
+<p><img src="/images/2025-12-03-1-dark-mode-slow.png" alt="2025-11-05-1-dark-mode-slow" /></p>
+
+<p><em><code class="language-plaintext highlighter-rouge">&lt;Script strategy="lazyOnload" /&gt;</code>, L(=<a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/load_event">Window.onload</a>)에서 적용된 경우.. 약 1초</em></p>
+
+<h2 id="3-notfound-문제">3. notFound() 문제</h2>
+
+<p>사실 이게 까다롭습니다.</p>
+
+<p>Next.js의 서버가 웹페이지에 대한 요청에 <a href="https://developer.mozilla.org/ko/docs/Web/HTTP/Reference/Status/404">404 Not Found</a>로 응답하는 경우는 두 가지가 있고,<br />
+이에 따라 페이지가 렌더되는 방식이 다릅니다.<br />
+여기서 이슈가 발생합니다.</p>
+
+<h3 id="3-1-라우팅에-의한-404">3-1. 라우팅에 의한 404</h3>
+
+<p><a href="https://nextjs.org/docs/app/getting-started/layouts-and-pages">Next.js의 라우팅</a>에 해당하는 페이지가 없을 경우, 404와 함께 <a href="https://nextjs.org/docs/app/api-reference/file-conventions/not-found">not-found.js</a>가 렌더됩니다.<br />
+이 때 페이지는 SSR로 렌더되며, 따라서 2의 스크립트가 정상적으로 실행됩니다.</p>
+
+<h3 id="3-2-notfound에-의한-동적인-404">3-2. notFound()에 의한 동적인 404</h3>
+
+<p>하지만 <a href="https://nextjs.org/docs/app/api-reference/functions/not-found">next/navigation의 notFound()</a>에서는 2의 스크립트가 정상 동작하지 않습니다.<br />
+이 때 페이지는 Hydration을 통해 CSR로 렌더되며, 따라서 <code class="language-plaintext highlighter-rouge">&lt;script&gt;</code> 태그의 내용이 실행되지 않습니다.</p>
+
+<p>그래서 스크립트의 실행을 위해서는 <a href="https://nextjs.org/docs/app/api-reference/components/script">next/script</a>의 <code class="language-plaintext highlighter-rouge">&lt;Script strategy="afterInteractive"&gt;</code>가 필요합니다.<br />
+여기서는 일반적인 Hydration과 달리 <a href="https://developer.mozilla.org/ko/docs/Web/API/Node/appendChild">Node.appendChild()</a>를 <a href="https://github.com/vercel/next.js/blob/2f86fbab810d3dd6ceb95bc5dea5b96525fe03b9/packages/next/src/client/script.tsx#L154">호출</a>하기 때문에</p>
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// vercel/next.js, packages/next/src/client/script.tsx</span>
+
+<span class="kd">function</span> <span class="nf">Script</span><span class="p">(</span><span class="nx">props</span><span class="p">:</span> <span class="nx">ScriptProps</span><span class="p">):</span> <span class="nx">JSX</span><span class="p">.</span><span class="nx">Element</span> <span class="o">|</span> <span class="kc">null</span> <span class="p">{</span>
+  <span class="c1">// 전략</span>
+  <span class="k">if </span><span class="p">(</span><span class="nx">strategy</span> <span class="o">===</span> <span class="dl">'</span><span class="s1">afterInteractive</span><span class="dl">'</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nf">loadScript</span><span class="p">(</span><span class="nx">props</span><span class="p">)</span>
+  <span class="p">}</span>
+  <span class="c1">// 후략</span>
+<span class="p">}</span>
+
+<span class="kd">const</span> <span class="nx">loadScript</span> <span class="o">=</span> <span class="p">(</span><span class="nx">props</span><span class="p">:</span> <span class="nx">ScriptProps</span><span class="p">):</span> <span class="k">void</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="c1">// 전략</span>
+  <span class="nb">document</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nf">appendChild</span><span class="p">(</span><span class="nx">el</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">&lt;script&gt;</code>가 렌더되면서, 동시에 실행도 보장이 됩니다. (조금 느리지만요.) 다행이네요!</p>
+
+<h2 id="최종-코드">최종 코드</h2>
+
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Next.js, layout.tsx</span>
+<span class="k">import</span> <span class="nx">Script</span> <span class="k">from</span> <span class="dl">"</span><span class="s2">next/script</span><span class="dl">"</span><span class="p">;</span>
+
+<span class="k">export</span> <span class="k">default</span> <span class="kd">function</span> <span class="nf">RootLayout</span><span class="p">({</span> <span class="nx">children</span> <span class="p">}:</span> <span class="nx">Readonly</span><span class="o">&lt;</span><span class="p">{</span> <span class="na">children</span><span class="p">:</span> <span class="nx">React</span><span class="p">.</span><span class="nx">ReactNode</span> <span class="p">}</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return </span><span class="p">(</span>
+    <span class="p">&lt;</span><span class="nt">html</span> <span class="na">lang</span><span class="p">=</span><span class="s">"en"</span> <span class="na">suppressHydrationWarning</span><span class="p">=</span><span class="si">{</span><span class="kc">true</span><span class="si">}</span><span class="p">&gt;</span>
+      <span class="p">&lt;</span><span class="nt">body</span><span class="p">&gt;</span>
+        <span class="p">&lt;</span><span class="nt">script</span> <span class="na">src</span><span class="p">=</span><span class="s">"/dark-mode.js"</span> <span class="p">/&gt;</span>
+        <span class="p">&lt;</span><span class="nc">Script</span> <span class="na">src</span><span class="p">=</span><span class="s">"/dark-mode.js"</span> <span class="na">strategy</span><span class="p">=</span><span class="s">"afterInteractive"</span> <span class="p">/&gt;</span>
+        <span class="si">{</span><span class="nx">children</span><span class="si">}</span>
+      <span class="p">&lt;/</span><span class="nt">body</span><span class="p">&gt;</span>
+    <span class="p">&lt;/</span><span class="nt">html</span><span class="p">&gt;</span>
+  <span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Next.js, /public/dark-mode.js</span>
+<span class="p">(()</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="kd">const</span> <span class="nx">isDark</span> <span class="o">=</span> <span class="nb">window</span><span class="p">.</span><span class="nf">matchMedia</span><span class="p">(</span><span class="dl">'</span><span class="s1">(prefers-color-scheme: dark)</span><span class="dl">'</span><span class="p">).</span><span class="nx">matches</span><span class="p">;</span>
+  <span class="k">if </span><span class="p">(</span><span class="nx">isDark</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nb">document</span><span class="p">.</span><span class="nx">documentElement</span><span class="p">.</span><span class="nx">classList</span><span class="p">.</span><span class="nf">add</span><span class="p">(</span><span class="dl">'</span><span class="s1">dark</span><span class="dl">'</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">})();</span>
+</code></pre></div></div>
+
+<h2 id="참고">참고</h2>
+
+<p>next/script의 배경에 대해서는 아래의 PR을 확인해주세요.</p>
+<blockquote>
+  <p><a href="https://github.com/vercel/next.js/pull/18281">Script loader component by janicklas-ralph · Pull Request #18281 · vercel/next.js</a></p>
+</blockquote>
+
+<p>CSR에서 <code class="language-plaintext highlighter-rouge">&lt;script&gt;</code>의 내용이 실행되지 않는 이유와,<br />
+next/script의 <code class="language-plaintext highlighter-rouge">&lt;Script&gt;</code>에서는 내용이 실행돠는 이유에 대해서는 아래의 HTML Standard를 확인해주세요.</p>
+<blockquote>
+  <p><a href="https://html.spec.whatwg.org/multipage/scripting.html#script-processing-model">HTML Standard: 4.12.1.1 Processing model</a><br />
+<em>즉 insertedNode 과정을 거쳐야지만 <code class="language-plaintext highlighter-rouge">&lt;script&gt;</code>의 내용이 실행됩니다.</em></p>
+</blockquote>]]></content><author><name>이은국</name></author><summary type="html"><![CDATA[1. 먼저 알아두기]]></summary></entry><entry><title type="html">AL2023에 yum과 함께 docker-compose 설치하기</title><link href="https://eungook.github.io/2025/10/22/1.html" rel="alternate" type="text/html" title="AL2023에 yum과 함께 docker-compose 설치하기" /><published>2025-10-22T12:40:00+09:00</published><updated>2025-10-22T12:40:00+09:00</updated><id>https://eungook.github.io/2025/10/22/1</id><content type="html" xml:base="https://eungook.github.io/2025/10/22/1.html"><![CDATA[<p>AWS EC2 인스턴스를 만들 때, OS를 아마존에서 제공하는 AL2023으로 만드는 경우가 있습니다.<br />
+이 경우 docker는 설치가 잘 되지만, docker-compose의 설치가 실패하는 경우가 있습니다.<br />
+이를 해결하고 원인을 확인해 봅시다.</p>
+
+<h2 id="설치-방법-요약">설치 방법 요약</h2>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>yum update
+<span class="nv">$ </span><span class="nb">sudo </span>yum <span class="nb">install </span>docker <span class="nt">-y</span>
+<span class="nv">$ </span><span class="nb">sudo </span>yum-config-manager <span class="nt">--add-repo</span> https://download.docker.com/linux/centos/docker-ce.repo
+<span class="nv">$ </span><span class="nb">sudo </span>yum <span class="nb">install </span>docker-compose-plugin <span class="nt">-y</span> <span class="nt">--releasever</span><span class="o">=</span>7
+</code></pre></div></div>
+
+<h2 id="1-docker-compose-설치-문서-읽기">1. docker-compose 설치 문서 읽기</h2>
+<p>먼저 도커 홈페이지의 <a href="https://docs.docker.com/compose/install/linux/#install-using-the-repository">Docker Compose: Install using the repository</a>를 읽어봅니다.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>yum update
+<span class="nv">$ </span><span class="nb">sudo </span>yum <span class="nb">install </span>docker-compose-plugin
+</code></pre></div></div>
+
+<p>오 간단하네요. 하지만 직접 해보면 에러가 납니다.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>yum <span class="nb">install </span>docker-compose-plugin
+Last metadata expiration check: 0:38:42 ago on Wed Oct 22 01:51:59 2025.
+No match <span class="k">for </span>argument: docker-compose-plugin
+Error: Unable to find a match: docker-compose-plugin
+</code></pre></div></div>
+
+<h2 id="2-repo-추가">2. repo 추가</h2>
+<p>AL2023에 기본으로 설정되어 있는 yum.repos.d에는 docker-compose 패키지가 없습니다.<br />
+그래서 docker-compose-plugin 설치시 <code class="language-plaintext highlighter-rouge">Unable to find a match</code> 에러가 발생합니다.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cd</span> /etc/yum.repos.d/
+<span class="nv">$ </span><span class="nb">grep</span> <span class="nb">.</span> <span class="k">*</span>
+amazonlinux.repo:[amazonlinux]
+amazonlinux.repo:name<span class="o">=</span>Amazon Linux 2023 repository
+amazonlinux.repo:mirrorlist<span class="o">=</span>https://al2023-repos-<span class="nv">$awsregion</span><span class="nt">-de612dc2</span>.s3<span class="nv">$dualstak</span>.<span class="nv">$awsregion</span>.<span class="nv">$awsdomain</span>/core/mirrors/<span class="nv">$releasever</span>/<span class="nv">$basearch</span>/<span class="nv">$mirrorlist</span>
+<span class="c"># 중략</span>
+kernel-livepatch.repo:[kernel-livepatch]
+kernel-livepatch.repo:name<span class="o">=</span>Amazon Linux 2023 Kernel Livepatch repository
+kernel-livepatch.repo:mirrorlist<span class="o">=</span>https://al2023-repos-<span class="nv">$awsregion</span><span class="nt">-de612dc2</span>.s3.dulstack.<span class="nv">$awsregion</span>.<span class="nv">$awsdomain</span>/kernel-livepatch/mirrors/al2023/<span class="nv">$basearch</span>/mirror.lst
+<span class="c"># 중략</span>
+</code></pre></div></div>
+
+<p>도커 홈페이지의 <a href="https://docs.docker.com/engine/install/centos/#install-using-the-repository">Docker Engine: Install using the rpm repository</a>를 참고하여 docker의 repo를 추가해줍니다.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>dnf <span class="nt">-y</span> <span class="nb">install </span>dnf-plugins-core
+<span class="nv">$ </span><span class="nb">sudo </span>dnf config-manager <span class="nt">--add-repo</span> https://download.docker.com/linux/centos/docker-ce.repo
+</code></pre></div></div>
+
+<h2 id="3-releasever-설정하기">3. releasever 설정하기</h2>
+<p>하지만 이번에는 <code class="language-plaintext highlighter-rouge">Cannot download repomd.xml</code> 에러가 발생합니다.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>yum <span class="nb">install </span>docker-compose-plugin
+Docker CE Stable - x86_64                       382  B/s | 397  B     00:01    
+Errors during downloading metadata <span class="k">for </span>repository <span class="s1">'docker-ce-stable'</span>:
+  - Status code: 404 <span class="k">for </span>https://download.docker.com/linux/centos/2023.9.20251014/x86_64/stable/repodata/repomd.xml <span class="o">(</span>IP: 18.244.60.57<span class="o">)</span>
+Error: Failed to download metadata <span class="k">for </span>repo <span class="s1">'docker-ce-stable'</span>: Cannot download repomd.xml: Cannot download repodata/repomd.xml: All mirrors were tried
+Ignoring repositories: docker-ce-stable
+Last metadata expiration check: 1:26:00 ago on Wed Oct 22 01:51:59 2025.
+No match <span class="k">for </span>argument: docker-compose-plugin
+Error: Unable to find a match: docker-compose-plugin
+</code></pre></div></div>
+
+<p>실제로 <a href="https://download.docker.com/linux/centos/2023.9.20251014/x86_64/stable/repodata/repomd.xml">위의 URL</a>로 직접 접근해보면 마찬가지로 404가 발생합니다.<br />
+아까 추가한 docker의 repo를 확인해봅시다.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">cat</span> /etc/yum.repos.d/docker-ce.repo 
+<span class="o">[</span>docker-ce-stable]
+<span class="nv">name</span><span class="o">=</span>Docker CE Stable - <span class="nv">$basearch</span>
+<span class="nv">baseurl</span><span class="o">=</span>https://download.docker.com/linux/centos/<span class="nv">$releasever</span>/<span class="nv">$basearch</span>/stable
+<span class="c"># 후략</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">$releasever</code>가 <code class="language-plaintext highlighter-rouge">2023.9.20251014</code>라는 값으로 되어 있나봅니다.<br />
+하지만 CentOS에는 이런 <code class="language-plaintext highlighter-rouge">$releasever</code>는 없습니다. 7이나 8 등등이죠. 왜 이렇게 된 걸까요?</p>
+
+<p>실은 AL2023은 여러 패키지를 아마존 자신들이 직접 관리합니다.<br />
+<a href="https://docs.aws.amazon.com/linux/al2023/release-notes/support-info-by-support-statement.html">Amazon Linux 2023: Package support statements</a><br />
+그래서 이를 위해 다른 repo와 호환되지 않는 <code class="language-plaintext highlighter-rouge">$releasever</code>으로 직접 관리하고 있습니다.</p>
+
+<blockquote>
+  <p>유효한 <code class="language-plaintext highlighter-rouge">releasever</code>는 <code class="language-plaintext highlighter-rouge">최신</code> 버전이거나 <code class="language-plaintext highlighter-rouge">2023.8.20250908과 같은 날짜 스탬프 버전입니다</code>.</p>
+  <ul>
+    <li><a href="https://docs.aws.amazon.com/ko_kr/linux/al2023/ug/deterministic-upgrades-usage.html">Amazon Linux 2023: 현재 위치 결정적 업그레이드</a></li>
+  </ul>
+</blockquote>
+
+<p>이제 <code class="language-plaintext highlighter-rouge">--releasever</code> 옵션을 통해 명시적으로 버젼을 설정하여 AL2023 외부의 repo에서 패키지를 설치할 수 있습니다.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>yum <span class="nb">install </span>docker-compose-plugin <span class="nt">-y</span> <span class="nt">--releasever</span><span class="o">=</span>7
+</code></pre></div></div>
+
+<p>혹은 <code class="language-plaintext highlighter-rouge">docker-ce.repo</code>를 직접 수정할 수도 있습니다.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>yum-config-manager <span class="nt">--setopt</span><span class="o">=</span><span class="s2">"docker-ce-stable.baseurl=https://download.docker.com/linux/centos/7/</span><span class="se">\$</span><span class="s2">basearch/stable"</span> <span class="nt">--save</span>
+<span class="nv">$ </span><span class="nb">cat</span> /etc/yum.repos.d/docker-ce.repo 
+<span class="o">[</span>docker-ce-stable]
+<span class="nv">name</span><span class="o">=</span>Docker CE Stable - <span class="nv">$basearch</span>
+<span class="nv">baseurl</span><span class="o">=</span>https://download.docker.com/linux/centos/7/<span class="nv">$basearch</span>/stable
+<span class="c"># 후략</span>
+</code></pre></div></div>
+
+<h2 id="4-설치-완료">4. 설치 완료</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">sudo </span>yum <span class="nb">install </span>docker-compose-plugin <span class="nt">-y</span> <span class="nt">--releasever</span><span class="o">=</span>7
+Amazon Linux 2023 repository                    1.9 kB/s | 275  B     00:00    
+Errors during downloading metadata <span class="k">for </span>repository <span class="s1">'amazonlinux'</span>:
+  - Status code: 403 <span class="k">for </span>https://al2023-repos-ap-northeast-2-de612dc2.s3.dualstack.ap-northeast-2.amazonaws.com/core/mirrors/7/x86_64/mirror.list <span class="o">(</span>IP: 3.5.188.25<span class="o">)</span>
+  - Status code: 403 <span class="k">for </span>https://al2023-repos-ap-northeast-2-de612dc2.s3.dualstack.ap-northeast-2.amazonaws.com/core/mirrors/7/x86_64/mirror.list <span class="o">(</span>IP: 3.5.188.176<span class="o">)</span>
+Error: Failed to download metadata <span class="k">for </span>repo <span class="s1">'amazonlinux'</span>: Cannot prepare internal mirrorlist: Status code: 403 <span class="k">for </span>https://al2023-repos-ap-northeast-2-de612dc2.s3.dualstack.ap-northeast-2.amazonaws.com/core/mirrors/7/x86_64/mirror.list <span class="o">(</span>IP: 3.5.188.176<span class="o">)</span>
+Docker CE Stable - x86_64                       192 kB/s | 3.5 kB     00:00    
+Ignoring repositories: amazonlinux
+Dependencies resolved.
+<span class="o">================================================================================</span>
+ Package                  Arch      Version           Repository           Size
+<span class="o">================================================================================</span>
+Installing:
+ docker-compose-plugin    x86_64    2.27.1-1.el7      docker-ce-stable     13 M
+
+<span class="c"># 중략</span>
+
+Installed:
+  docker-compose-plugin-2.27.1-1.el7.x86_64                                     
+
+Complete!
+<span class="nv">$ </span>docker compose version
+Docker Compose version v2.27.1
+</code></pre></div></div>
+
+<p>정상적으로 설치가 완료 되었습니다.<br />
+이렇게 AL2023에서 yum으로 docker-compose를 설치해보고, 설치가 실패하는 원인을 확인해 보았습니다.</p>]]></content><author><name>이은국</name></author><summary type="html"><![CDATA[AWS EC2 인스턴스를 만들 때, OS를 아마존에서 제공하는 AL2023으로 만드는 경우가 있습니다. 이 경우 docker는 설치가 잘 되지만, docker-compose의 설치가 실패하는 경우가 있습니다. 이를 해결하고 원인을 확인해 봅시다.]]></summary></entry><entry><title type="html">text-overflow를 페이드 아웃으로 처리하기</title><link href="https://eungook.github.io/2025/10/15/1.html" rel="alternate" type="text/html" title="text-overflow를 페이드 아웃으로 처리하기" /><published>2025-10-15T15:50:00+09:00</published><updated>2025-10-15T15:50:00+09:00</updated><id>https://eungook.github.io/2025/10/15/1</id><content type="html" xml:base="https://eungook.github.io/2025/10/15/1.html"><![CDATA[<p>게시글의 제목 등이 너무 길 때, <a href="https://developer.mozilla.org/ko/docs/Web/CSS/text-overflow">text-overflow</a>를 통해 디자인을 해치지 않도록 합니다.<br />
+이 때 clip이나 ellipsis 대신 페이드 아웃 처리를 하고 싶을 때가 있습니다.<br />
+CSS를 통해 이를 구현해봅니다.</p>
+
+<h2 id="1-mask-image">1. mask-image</h2>
+
+<p class="codepen" data-height="300" data-default-tab="css,result" data-slug-hash="RNrLYKv" data-pen-title="text-overflow (1)" data-user="_______eungook" style="height: 300px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid; margin: 1em 0; padding: 1em;">
+  <span>See the Pen <a href="https://codepen.io/_______eungook/pen/RNrLYKv">
+  text-overflow (1)</a> by _______eungook (<a href="https://codepen.io/_______eungook">@_______eungook</a>)
+  on <a href="https://codepen.io">CodePen</a>.</span>
+</p>
+<script async="" src="https://public.codepenassets.com/embed/index.js"></script>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/CSS/mask-image">mask-image</a>를 <a href="https://developer.mozilla.org/ko/docs/Web/CSS/gradient/linear-gradient">linear-gradient()</a>로 씌워주는 것으로 간단히 구현할 수 있습니다.</p>
+
+<h2 id="2-a-태그인-경우">2. &lt;a&gt; 태그인 경우</h2>
+<p>text-overflow를 위해서는 display: block이 필요합니다.<br />
+이 경우 &lt;a&gt; 태그는 text가 아닌 block 영역 전체가 클릭 가능한 영역이 되어 사용성에 문제가 생깁니다.</p>
+
+<p>그래서 이를 위해 <a href="https://developer.mozilla.org/ko/docs/Web/CSS/fit-content">width: fit-content</a>를 넣어주게 되는데, 부영향으로 mask-image의 width도 같이 짧아지게 됩니다.<br />
+그 결과 text-overflow와 무관한 페이드 아웃이 적용됩니다.</p>
+
+<p>이 부분은 다시 mask-size를 max-width와 동일하게 적용하여 해결할 수 있습니다.</p>
+
+<p class="codepen" data-height="300" data-default-tab="css,result" data-slug-hash="YPwrOdb" data-pen-title="text-overflow (2)" data-user="_______eungook" style="height: 300px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid; margin: 1em 0; padding: 1em;">
+  <span>See the Pen <a href="https://codepen.io/_______eungook/pen/YPwrOdb">
+  text-overflow (2)</a> by _______eungook (<a href="https://codepen.io/_______eungook">@_______eungook</a>)
+  on <a href="https://codepen.io">CodePen</a>.</span>
+</p>
+<script async="" src="https://public.codepenassets.com/embed/index.js"></script>
+
+<h2 id="3-tailwind의-utility로">3. tailwind의 @utility로</h2>
+<p>위 내용을 <a href="https://tailwindcss.com/docs/adding-custom-styles#functional-utilities">tailwind의 @utility</a>로 등록하면 다음과 같습니다.</p>
+<div class="language-scss highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cm">/* 제목이 너무 긴 경우 페이드 아웃 효과 */</span>
+
+<span class="k">@utility</span> <span class="nt">post-truncate-</span><span class="o">*</span> <span class="p">{</span>
+    <span class="k">@apply</span> <span class="nt">inline-block</span> <span class="nt">truncate</span> <span class="nt">text-clip</span><span class="p">;</span>
+    
+    <span class="nl">mask-image</span><span class="p">:</span> <span class="nf">linear-gradient</span><span class="p">(</span><span class="n">to</span> <span class="nb">right</span><span class="o">,</span> <span class="n">black</span> <span class="m">90%</span><span class="o">,</span> <span class="nb">transparent</span><span class="p">);</span>
+    
+    <span class="nl">max-width</span><span class="p">:</span> <span class="nf">--value</span><span class="p">(</span><span class="o">--</span><span class="n">container-</span><span class="o">*</span><span class="p">);</span>
+    <span class="nl">max-width</span><span class="p">:</span> <span class="nf">--value</span><span class="p">([</span><span class="n">number</span><span class="p">]);</span>
+    <span class="nl">max-width</span><span class="p">:</span> <span class="nf">calc</span><span class="p">(</span><span class="nf">--value</span><span class="p">(</span><span class="n">number</span><span class="p">)</span> <span class="o">*</span> <span class="m">1rem</span><span class="p">);</span>
+    
+    <span class="nl">mask-size</span><span class="p">:</span> <span class="nf">--value</span><span class="p">(</span><span class="o">--</span><span class="n">container-</span><span class="o">*</span><span class="p">);</span>
+    <span class="nl">mask-size</span><span class="p">:</span> <span class="nf">--value</span><span class="p">([</span><span class="n">number</span><span class="p">]);</span>
+    <span class="nl">mask-size</span><span class="p">:</span> <span class="nf">calc</span><span class="p">(</span><span class="nf">--value</span><span class="p">(</span><span class="n">number</span><span class="p">)</span> <span class="o">*</span> <span class="m">1rem</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">post-truncate-16</code>, <code class="language-plaintext highlighter-rouge">post-truncate-xl</code> 같은 느낌으로 사용할 수 있습니다.</p>]]></content><author><name>이은국</name></author><summary type="html"><![CDATA[게시글의 제목 등이 너무 길 때, text-overflow를 통해 디자인을 해치지 않도록 합니다. 이 때 clip이나 ellipsis 대신 페이드 아웃 처리를 하고 싶을 때가 있습니다. CSS를 통해 이를 구현해봅니다.]]></summary></entry><entry><title type="html">ssh key 여러개 사용하기</title><link href="https://eungook.github.io/2021/12/07/1.html" rel="alternate" type="text/html" title="ssh key 여러개 사용하기" /><published>2021-12-07T13:54:00+09:00</published><updated>2021-12-07T13:54:00+09:00</updated><id>https://eungook.github.io/2021/12/07/1</id><content type="html" xml:base="https://eungook.github.io/2021/12/07/1.html"><![CDATA[<h2 id="하고-싶었던-것">하고 싶었던 것</h2>
+
+<p>github과 gitlab의 ssh key를 서로 다르게 가져가고 싶었습니다.<br />
+하지만 깃에서 사용하는 ssh key는 OS 레벨에서 관리되기 때문에? 간단하지 않았습니다.</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>% git config <span class="nt">--list</span>
+credential.helper<span class="o">=</span>osxkeychain
+</code></pre></div></div>
+
+<p>어.. 이렇게 쓰고 보니까 <code class="language-plaintext highlighter-rouge">credential.helper</code>를 잘 다룰 줄 알았더라면 좀 더 빨리 끝냈을 것 같네요 (u_u );;</p>
+
+<h2 id="sshconfig-를-사용해봅니다">~/.ssh/config 를 사용해봅니다</h2>
+
+<p>먼저 ssh key를 적당히 하나 만들고, <code class="language-plaintext highlighter-rouge">~/.ssh/config</code>를 수정해봅니다</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>% <span class="nb">cat</span> ~/.ssh/config 
+Host git-codecommit.<span class="k">*</span>.amazonaws.com
+User <span class="k">****</span>
+IdentityFile ~/.ssh/id_rsa
+
+<span class="c"># **** Account Identity</span>
+Host gitlab.com
+  Hostname gitlab.com
+  PreferredAuthentications publickey
+  IdentityFile ~/.ssh/id_rsa_<span class="k">****</span> <span class="c"># 적당히 하나 만든 ssh key</span>
+</code></pre></div></div>
+
+<p>이렇게 하면 <code class="language-plaintext highlighter-rouge">gitlab.com</code> 에 대한 ssh 관련 접근에 적당히 하나 만든 키를 사용하게 됩니다.</p>
+
+<ul>
+  <li>참고<br />
+<a href="https://man.openbsd.org/ssh_config">man ssh_config: OpenBSD manual pages</a><br />
+<a href="https://docs.gitlab.com/ee/ssh/#configure-ssh-to-point-to-a-different-directory">Configure SSH to point to a different directory: GitLab</a></li>
+</ul>
+
+<h2 id="즉-ssh로-연결해야-합니다">즉 ssh로 연결해야 합니다.</h2>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>% git config remote.origin.url <span class="s1">'https://gitlab.com/****/****.git'</span>
+% git fetch
+remote: The project you were looking <span class="k">for </span>could not be found or you don<span class="s1">'t have permission to view it.
+</span></code></pre></div></div>
+
+<p>이러면 안 되고,</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>% git config remote.origin.url <span class="s1">'git@gitlab.com:****/****.git'</span>
+% git fetch
+fatal: bad object refs/heads/main 2
+error: <span class="k">****</span>.gitlab.com:<span class="k">****</span>/<span class="k">****</span>.git이<span class="o">(</span>가<span class="o">)</span> 모든 필요한 오브젝트를 보내지 않았습니다 <span class="c"># did not send all necessary objects</span>
+</code></pre></div></div>
+
+<p>어.. 왜 안 될까요;;<br />
+찾아보니 이건 다른 문제였습니다.</p>
+
+<h2 id="error-invalid-sha1-pointer--error-bad-ref-for">error: invalid sha1 pointer | error: bad ref for</h2>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>% git fsck <span class="nt">--full</span>
+오브젝트 디렉터리를 확인하는 중입니다: 100% <span class="o">(</span>256/256<span class="o">)</span>, 완료.
+오브젝트를 확인합니다: 100% <span class="o">(</span>39445/39445<span class="o">)</span>, 완료.
+error: refs/heads/main 2: invalid sha1 pointer 0000000000000000000000000000000000000000
+error: bad ref <span class="k">for</span> .git/logs/refs/heads/main 2
+</code></pre></div></div>
+
+<p>에러나는 파일인 <code class="language-plaintext highlighter-rouge">.git/refs/heads/main 2</code>, <code class="language-plaintext highlighter-rouge">.git/logs/refs/heads/main 2</code> 를 삭제하여 해결했습니다.</p>
+
+<ul>
+  <li>참고<br />
+<a href="https://stackoverflow.com/a/37740711">This means my pack file is no corrupted but some refs are invalid: Stack Overflow</a><br />
+<a href="https://stackoverflow.com/a/8817602">“did not send all necessary objects” is the manifestation of the error, not the error itself: Stack Overflow</a></li>
+</ul>
+
+<h2 id="마치며">마치며</h2>
+
+<p>아 역시 <code class="language-plaintext highlighter-rouge">git config</code>의 <a href="https://git-scm.com/docs/git-config#Documentation/git-config.txt-credentialhelper">credential</a>을 사용하는게 더 자연스러울 것 같아요!</p>]]></content><author><name>이은국</name></author><summary type="html"><![CDATA[하고 싶었던 것]]></summary></entry><entry><title type="html">create-react-app에서 절대 경로로 import 해보기</title><link href="https://eungook.github.io/2021/09/03/1.html" rel="alternate" type="text/html" title="create-react-app에서 절대 경로로 import 해보기" /><published>2021-09-03T14:32:00+09:00</published><updated>2021-09-03T14:32:00+09:00</updated><id>https://eungook.github.io/2021/09/03/1</id><content type="html" xml:base="https://eungook.github.io/2021/09/03/1.html"><![CDATA[<p>생각해보면 웹사이트에서 여러 정적 리소스를* 가져올 때, 여러 이유로 보통 절대 경로를 사용합니다. <br /> 마찬가지로 import시에도 절대 경로에 비슷한 장점이 있다고 생각합니다. 그럼 어떻게 하는지 한 번 봐요!</p>
+
+<blockquote>
+  <p>*: static resource, 여러 이미지나 css 파일 등</p>
+</blockquote>
+
+<h2 id="absolute-imports-importing-a-component">Absolute Imports: Importing a Component</h2>
+
+<p>먼저 CRA 공홈의 <a href="https://create-react-app.dev/docs/importing-a-component/#absolute-imports">문서</a>를 읽어보죠! 그리고… 그리고?</p>
+
+<p>그대로 따라해보면 됩니다! <code class="language-plaintext highlighter-rouge">jsconfig.json</code> 파일만 추가하고, <br />
+나와있는대로 <code class="language-plaintext highlighter-rouge">compilerOptions.baseUrl</code>과 <code class="language-plaintext highlighter-rouge">include</code>만 설정해주시면 됩니다. (복붙복붙)</p>
+
+<p><em>엥 끝?🤔</em> 넵 끝이에요!🥳</p>
+
+<h2 id="이게-왜-되는거냐면요">이게 왜 되는거냐면요~</h2>
+
+<p>에 그러니까? 이건 사실 <code class="language-plaintext highlighter-rouge">webpack</code>의 설정인 <code class="language-plaintext highlighter-rouge">webpack.config.js</code>의 <code class="language-plaintext highlighter-rouge">resolve.modules</code>을 (<a href="https://v4.webpack.js.org/configuration/resolve/#resolvemodules">참고</a>) CRA 3.0.0에서부터 <a href="https://github.com/facebook/create-react-app/blob/main/CHANGELOG-3.x.md#new-features">구현</a>한 내용입니다. 자세한 내용이 궁금하시면 아래 풀리퀘를 참고하세요!</p>
+
+<blockquote>
+  <p>Set baseUrl from jsconfig.json/tsconfig.json <a href="https://github.com/facebook/create-react-app/pull/6656">#6656</a></p>
+</blockquote>
+
+<p>그 대신.. 제한을 걸어놨어요! 위의 문서처럼 <code class="language-plaintext highlighter-rouge">compilerOptions.baseUrl</code>, <code class="language-plaintext highlighter-rouge">include</code>를 <code class="language-plaintext highlighter-rouge">src</code>로 설정해주셔야 합니다. 뭔가의 안전상 이유일까요?</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Otherwise, throw an error.</span>
+<span class="k">throw</span> <span class="k">new</span> <span class="nc">Error</span><span class="p">(</span>
+	<span class="nx">chalk</span><span class="p">.</span><span class="nx">red</span><span class="p">.</span><span class="nf">bold</span><span class="p">(</span>
+		<span class="dl">"</span><span class="s2">Your project's `baseUrl` can only be set to `src` or `node_modules`.</span><span class="dl">"</span> <span class="o">+</span>
+			<span class="dl">'</span><span class="s1"> Create React App does not support other values at this time.</span><span class="dl">'</span>
+	<span class="p">)</span>
+<span class="p">);</span>
+</code></pre></div></div>
+<p>(참고: packages/react-scripts/config/modules.js <a href="https://github.com/facebook/create-react-app/blob/f039bf544c95636e803d32c9327c2b2d5e1ea3eb/packages/react-scripts/config/modules.js#L48">:48</a>)</p>
+
+<p>그리고 또한 <code class="language-plaintext highlighter-rouge">Jest</code>에서도 문제 없도록 <code class="language-plaintext highlighter-rouge">jest.config.js</code>의 <code class="language-plaintext highlighter-rouge">modulePaths</code>를 (<a href="https://jestjs.io/docs/configuration#modulepaths-arraystring">참고</a>) 챙겨주고 있답니다!</p>
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="p">(</span><span class="nx">resolve</span><span class="p">,</span> <span class="nx">rootDir</span><span class="p">,</span> <span class="nx">isEjecting</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="c1">// Use this instead of `paths.testsSetup` to avoid putting</span>
+  <span class="c1">// an absolute filename into configuration after ejecting.</span>
+  <span class="kd">const</span> <span class="nx">setupTestsMatches</span> <span class="o">=</span> <span class="nx">paths</span><span class="p">.</span><span class="nx">testsSetup</span><span class="p">.</span><span class="nf">match</span><span class="p">(</span><span class="sr">/src</span><span class="se">[/\\]</span><span class="sr">setupTests</span><span class="se">\.(</span><span class="sr">.+</span><span class="se">)</span><span class="sr">/</span><span class="p">);</span>
+  <span class="kd">const</span> <span class="nx">setupTestsFileExtension</span> <span class="o">=</span>
+    <span class="p">(</span><span class="nx">setupTestsMatches</span> <span class="o">&amp;&amp;</span> <span class="nx">setupTestsMatches</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">||</span> <span class="dl">'</span><span class="s1">js</span><span class="dl">'</span><span class="p">;</span>
+  <span class="kd">const</span> <span class="nx">setupTestsFile</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nf">existsSync</span><span class="p">(</span><span class="nx">paths</span><span class="p">.</span><span class="nx">testsSetup</span><span class="p">)</span>
+    <span class="p">?</span> <span class="s2">`&lt;rootDir&gt;/src/setupTests.</span><span class="p">${</span><span class="nx">setupTestsFileExtension</span><span class="p">}</span><span class="s2">`</span>
+    <span class="p">:</span> <span class="kc">undefined</span><span class="p">;</span>
+
+  <span class="kd">const</span> <span class="nx">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1">// 중략</span>
+    <span class="na">modulePaths</span><span class="p">:</span> <span class="nx">modules</span><span class="p">.</span><span class="nx">additionalModulePaths</span> <span class="o">||</span> <span class="p">[],</span>
+</code></pre></div></div>
+<p>(참고: packages/react-scripts/scripts/utils/createJestConfig.js <a href="https://github.com/facebook/create-react-app/blob/f039bf544c95636e803d32c9327c2b2d5e1ea3eb/packages/react-scripts/scripts/utils/createJestConfig.js#L53">:53</a>)</p>
+
+<p>와! 굳이 <code class="language-plaintext highlighter-rouge">module-alias</code>를 쓰지 않아도 되네요!</p>
+
+<h2 id="참고용-리파지터리">참고용 리파지터리</h2>
+<p><a href="https://github.com/eungook/absolute-imports-test-01">https://github.com/eungook/absolute-imports-test-01</a></p>]]></content><author><name>이은국</name></author><summary type="html"><![CDATA[생각해보면 웹사이트에서 여러 정적 리소스를* 가져올 때, 여러 이유로 보통 절대 경로를 사용합니다. 마찬가지로 import시에도 절대 경로에 비슷한 장점이 있다고 생각합니다. 그럼 어떻게 하는지 한 번 봐요!]]></summary></entry><entry><title type="html">Promise 체인은 catch()에서 멈추지 않습니다.</title><link href="https://eungook.github.io/2021/06/01/1.html" rel="alternate" type="text/html" title="Promise 체인은 catch()에서 멈추지 않습니다." /><published>2021-06-01T16:04:00+09:00</published><updated>2021-06-01T16:04:00+09:00</updated><id>https://eungook.github.io/2021/06/01/1</id><content type="html" xml:base="https://eungook.github.io/2021/06/01/1.html"><![CDATA[<p>안 되는건 아닌데, 작성 의도와 다르게 동작합니다. <strong>Promise 체인이 멈추지 않습니다.</strong><br />그래서 엄청 고생했었어요! T_T</p>
+
+<p>하여 Promise 체인의 실행 흐름과 접근 방법을 같이 알아보고,<br />끝으로 이 글의 <strong>숨겨진 주제</strong>를(???) 같이 읽어보겠습니다!</p>
+
+<h2 id="편리한-promise-체인-최고">편리한 Promise 체인 최고</h2>
+
+<p>너무 편합니다.</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">promise</span> <span class="o">=</span> <span class="nf">getResult</span><span class="p">();</span>
+<span class="nx">promise</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">response</span> <span class="o">=&gt;</span> <span class="nx">response</span><span class="p">.</span><span class="nf">json</span><span class="p">())</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">data</span> <span class="o">=&gt;</span> <span class="nf">makeAsyncList</span><span class="p">(</span><span class="nx">data</span><span class="p">))</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">list</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">list</span> <span class="p">}));</span>
+</code></pre></div></div>
+
+<h2 id="여기에-하나씩-catch를-넣어봅시다">여기에 하나씩 catch()를 넣어봅시다</h2>
+
+<p>이런 느낌이겠죠?</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">promise</span> <span class="o">=</span> <span class="nf">getResult</span><span class="p">();</span>
+
+<span class="nx">promise</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">response</span> <span class="o">=&gt;</span> <span class="nx">response</span><span class="p">.</span><span class="nf">json</span><span class="p">())</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error1</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error1</span> <span class="p">}))</span>
+  
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">data</span> <span class="o">=&gt;</span> <span class="nf">makeAsyncList</span><span class="p">(</span><span class="nx">data</span><span class="p">))</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error2</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error2</span> <span class="p">}))</span>
+  
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">list</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">list</span> <span class="p">}))</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error3</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error3</span> <span class="p">}));</span>
+</code></pre></div></div>
+
+<p>문법 에러 없이 잘 동작합니다. 하지만 <code class="language-plaintext highlighter-rouge">작성 의도</code>와는 다르게 동작합니다.</p>
+
+<p>error1이, 혹은 error2가 발생한다면 이 <strong>Promise 체인이 멈추길 기대합니다.</strong><br />하지만 <code class="language-plaintext highlighter-rouge">멈추지 않고</code>, 맨 마지막의 list가 출력됩니다. 정상적이지 않은 데이터로요.</p>
+
+<h2 id="이해를-위해-promise-체인을-뜯어봅시다">이해를 위해 Promise 체인을 뜯어봅시다</h2>
+
+<p>이런 느낌이 될 것 같습니다.</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">promise</span> <span class="o">=</span> <span class="nf">getResult</span><span class="p">();</span>
+
+<span class="kd">const</span> <span class="nx">promise2</span> <span class="o">=</span> <span class="nx">promise</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">response</span> <span class="o">=&gt;</span> <span class="nx">response</span><span class="p">.</span><span class="nf">json</span><span class="p">())</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error1</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error1</span> <span class="p">}));</span>
+
+<span class="kd">const</span> <span class="nx">promise3</span> <span class="o">=</span> <span class="nx">promise2</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">data</span> <span class="o">=&gt;</span> <span class="nf">makeAsyncList</span><span class="p">(</span><span class="nx">data</span><span class="p">))</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error2</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error2</span> <span class="p">}));</span>
+
+<span class="kd">const</span> <span class="nx">promise4</span> <span class="o">=</span> <span class="nx">promise3</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">list</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">list</span> <span class="p">}))</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error3</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error3</span> <span class="p">}));</span>
+</code></pre></div></div>
+
+<p>위를 이해하기 위해 우선 알아야 하는 것이 있습니다.<br /><code class="language-plaintext highlighter-rouge">Promise.then()</code>과  <code class="language-plaintext highlighter-rouge">Promise.catch()</code>는 <code class="language-plaintext highlighter-rouge">Promise</code>를 리턴합니다. (<a href="https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Global_Objects/Promise/then#%EC%84%A4%EB%AA%85">참고</a>)</p>
+
+<p>따라서 Promise 체인이 가능한 것이고,<br />따라서 위처럼 Promise 체인을 한 조각씩 뜯어볼 수 있습니다.</p>
+
+<p>하여 이제는 명확합니다. 실행흐름에 있어 <code class="language-plaintext highlighter-rouge">catch()</code>는 실행 흐름을 멈추지 않습니다.<br />그래서.. 그러면..?</p>
+
+<h2 id="promise-체인은-catch를-하나만-쓸-것을-권장합니다">Promise 체인은 catch()를 하나만 쓸 것을 권장합니다</h2>
+
+<p>이런 식으로요! (<a href="https://developer.mozilla.org/ko/docs/Web/JavaScript/Guide/Using_promises#error_propagation">참고</a>)</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">promise</span> <span class="o">=</span> <span class="nf">getResult</span><span class="p">();</span>
+<span class="nx">promise</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">response</span> <span class="o">=&gt;</span> <span class="nx">response</span><span class="p">.</span><span class="nf">json</span><span class="p">())</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">data</span> <span class="o">=&gt;</span> <span class="nf">makeAsyncList</span><span class="p">(</span><span class="nx">data</span><span class="p">))</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">list</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">list</span> <span class="p">}))</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error</span> <span class="p">}));</span>
+</code></pre></div></div>
+
+<p>Promise 체인 맨 아래에 <code class="language-plaintext highlighter-rouge">catch()</code> 단 하나를 둬서 <code class="language-plaintext highlighter-rouge">체인 속 모든 reject</code>를 여기서 처리하게 합니다.<br />이 실행흐름은 <code class="language-plaintext highlighter-rouge">try-catch</code>와 닮았습니다. (<a href="https://developer.mozilla.org/ko/docs/Web/JavaScript/Guide/Using_promises#error_propagation">참고</a>)</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">async</span> <span class="kd">function</span> <span class="nf">foo</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">try</span> <span class="p">{</span>
+    <span class="kd">const</span> <span class="nx">response</span> <span class="o">=</span> <span class="k">await</span> <span class="nf">getResult</span><span class="p">();</span>
+    <span class="kd">const</span> <span class="nx">data</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">response</span><span class="p">.</span><span class="nf">json</span><span class="p">();</span>
+    <span class="kd">const</span> <span class="nx">list</span> <span class="o">=</span> <span class="k">await</span> <span class="nf">makeAsyncList</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">list</span> <span class="p">});</span>
+    
+  <span class="p">}</span> <span class="k">catch</span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error</span> <span class="p">});</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>이제 <code class="language-plaintext highlighter-rouge">reject</code>가 발생하면 남은 Promise 체인을 건너 뛰고, 맨 아래의 <code class="language-plaintext highlighter-rouge">catch()</code>가 실행됩니다.<br />Promise 체인을 멈추는 데에 성공했습니다! (예이~! ^^)</p>
+
+<h2 id="숨겨진-주제-서로-다른-곳에서-발생한-에러-다루기">숨겨진 주제: 서로 다른 곳에서 발생한 에러 다루기</h2>
+
+<p>그럼 이제 새로운 고민이 생깁니다.<br />서로 다른 곳에서 발생한 서로 다른 에러를 한 곳에서 솜씨좋게 다뤄야 합니다. scope가 너무 넓은거죠.<br />아.. if문이 많이 필요할 것 같아요! (T_T)</p>
+
+<p>하여 선배님들은? 여기서 <code class="language-plaintext highlighter-rouge">instanceof</code>를 쓰기로 하였어요! (<a href="https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Global_Objects/Error#example_handling_a_specific_error">참고1</a>, <a href="https://stackoverflow.com/questions/1382107/whats-a-good-way-to-extend-error-in-javascript">참고2</a>)</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">promise</span> <span class="o">=</span> <span class="nf">getResult</span><span class="p">();</span>
+<span class="nx">promise</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">response</span> <span class="o">=&gt;</span> <span class="nx">response</span><span class="p">.</span><span class="nf">json</span><span class="p">())</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">data</span> <span class="o">=&gt;</span> <span class="nf">makeAsyncList</span><span class="p">(</span><span class="nx">data</span><span class="p">))</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">list</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">list</span> <span class="p">}))</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  	<span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error</span> <span class="p">});</span>
+  
+		<span class="k">if </span><span class="p">(</span><span class="nx">error</span> <span class="k">instanceof</span> <span class="nx">ReferenceError</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="dl">'</span><span class="s1">ReferenceError!</span><span class="dl">'</span><span class="p">);</span>
+			
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if </span><span class="p">(</span><span class="nx">error</span> <span class="k">instanceof</span> <span class="nx">TypeError</span><span class="p">)</span> <span class="p">{</span>
+    	<span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="dl">'</span><span class="s1">TypeError!</span><span class="dl">'</span><span class="p">);</span>
+    
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if </span><span class="p">(</span><span class="nx">error</span> <span class="k">instanceof</span> <span class="nx">MyError</span><span class="p">)</span> <span class="p">{</span>
+    	<span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="dl">'</span><span class="s1">MyError!</span><span class="dl">'</span><span class="p">);</span> <span class="c1">// Custom Error Types</span>
+    <span class="p">}</span>
+  <span class="p">});</span>
+</code></pre></div></div>
+
+<p>자바스크립트가 함수형 언어이면서도 동시에 객체지향 프로그래밍인 덕분이네요!<br />그런데 이 부분이 그래서 우리가 아는 <code class="language-plaintext highlighter-rouge">if</code>, <code class="language-plaintext highlighter-rouge">switch-case</code>와 뭐가 다른걸까요?</p>
+
+<p>…를! 알아가는 과정이 아마 객체지향 프로그래밍을 알아가는 과정일 것 같습니다.<br />하여, 이 글은 여기에서 끝입니다! (잉?ㅎㅎㅎㅎㅎㅎㅎ)</p>]]></content><author><name>이은국</name></author><summary type="html"><![CDATA[안 되는건 아닌데, 작성 의도와 다르게 동작합니다. Promise 체인이 멈추지 않습니다.그래서 엄청 고생했었어요! T_T]]></summary></entry><entry><title type="html">Jekyll + GitHub Pages 트러블슈팅</title><link href="https://eungook.github.io/2021/05/19/1.html" rel="alternate" type="text/html" title="Jekyll + GitHub Pages 트러블슈팅" /><published>2021-05-19T15:22:00+09:00</published><updated>2021-05-19T15:22:00+09:00</updated><id>https://eungook.github.io/2021/05/19/1</id><content type="html" xml:base="https://eungook.github.io/2021/05/19/1.html"><![CDATA[<h2 id="warning-it-seems-your-ruby-installation-is-missing-psych">warning: It seems your ruby installation is missing psych</h2>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>gem <span class="nb">install </span>jekyll
+/Users/ooxo/.rbenv/versions/3.0.0/lib/ruby/3.0.0/yaml.rb:3: warning: It seems your ruby installation is missing psych <span class="o">(</span><span class="k">for </span>YAML output<span class="o">)</span><span class="nb">.</span>
+To eliminate this warning, please <span class="nb">install </span>libyaml and reinstall your ruby.
+<span class="c">## 후략</span>
+</code></pre></div></div>
+<p>ruby를 새로 설치해서 해결했습니다.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>rbenv uninstall 3.0.1
+<span class="nv">$ </span>rbenv <span class="nb">install </span>2.7.3
+</code></pre></div></div>
+
+<h2 id="error-use-of-undeclared-identifier-rb_thread_select-did-you-mean-rb_thread_fd_select">error: use of undeclared identifier ‘rb_thread_select’; did you mean ‘rb_thread_fd_select’?</h2>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>gem <span class="nb">install </span>jekyll 
+Building native extensions. This could take a <span class="k">while</span>...
+ERROR:  Error installing jekyll:
+        ERROR: Failed to build gem native extension.
+    current directory: /Users/ooxo/.rbenv/versions/2.7.3/lib/ruby/gems/2.7.0/gems/eventmachine-1.2.7/ext
+<span class="c">## 중략</span>
+em.cpp:706:13: error: use of undeclared identifier <span class="s1">'rb_thread_select'</span><span class="p">;</span> did you mean <span class="s1">'rb_thread_fd_select'</span>?
+        <span class="k">if</span> <span class="o">((</span>ret <span class="o">=</span> rb_thread_select<span class="o">(</span>kqfd + 1, &amp;fdreads, NULL, NULL, &amp;tv<span class="o">))</span> &lt; 1<span class="o">)</span> <span class="o">{</span>
+<span class="c">## 후략</span>
+</code></pre></div></div>
+<p>rbenv부터 새로 설치해서 해결했습니다.</p>
+
+<p>먼저 ruby와 rbenv를 삭제합니다.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>gem <span class="nb">env  
+</span>RubyGems Environment:
+  - RUBYGEMS VERSION: 3.1.6
+  - RUBY VERSION: 2.7.3 <span class="o">(</span>2021-04-05 patchlevel 183<span class="o">)</span> <span class="o">[</span>arm64-darwin20]
+<span class="c">## 중략</span>
+  - SHELL PATH:
+     - /Users/ooxo/.rbenv/versions/2.7.3/bin
+     - /opt/homebrew/Cellar/rbenv/1.1.2/libexec
+     - /Users/ooxo/.gem/ruby/2.7.0/bin
+     - /Users/ooxo/.rbenv/shims
+     <span class="c">## 후략</span>
+
+<span class="nv">$ </span>which gem
+/Users/ooxo/.rbenv/shims/gem
+
+<span class="nv">$ </span>rbenv uninstall 2.7.3
+<span class="nv">$ </span>brew uninstall rbenv
+
+<span class="nv">$ </span>which gem
+/usr/bin/gem
+</code></pre></div></div>
+
+<p>이후 아래 디렉토리도 삭제해 주었습니다.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/Users/ooxo/.rbenv
+/Users/ooxo/.gem
+</code></pre></div></div>
+
+<p>환경변수 <code class="language-plaintext highlighter-rouge">$PATH</code>도 수정해 주었습니다.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$PATH</span>
+/Users/ooxo/.gem/ruby/2.7.0/bin: <span class="c">## &lt;- 이 부분을 찾아서 삭제 했습니다.</span>
+<span class="c">## 후략</span>
+</code></pre></div></div>
+
+<p>마지막으로 다시 rbenv, ruby를 설치하여 해결했습니다.</p>
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>brew <span class="nb">install </span>rbenv
+<span class="c">## rbenv 설치 이후, 설명대로 쉘 환경에 RUBY_CONFIGURE_OPTS를 추가해줍시다.</span>
+
+<span class="nv">$ </span>rbenv <span class="nb">install </span>3.0.1
+
+<span class="nv">$ </span>rbenv init
+<span class="c">## 설명대로 쉘 환경에 eval "$(rbenv init -)"를 추가해줍시다.</span>
+</code></pre></div></div>
+
+<h2 id="warning--you-dont-have-usersbin-in-your-path-gem-executables-will-not-run">WARNING:  You don’t have /Users/…/bin in your PATH, gem executables will not run.</h2>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>gem <span class="nb">install</span> <span class="nt">--user-install</span> bundler jekyll
+Fetching bundler-2.2.17.gem
+WARNING:  You don<span class="s1">'t have /Users/ooxo/.local/share/gem/ruby/3.0.0/bin in your PATH,
+	  gem executables will not run.
+## 후략
+</span></code></pre></div></div>
+
+<p>환경변수 <code class="language-plaintext highlighter-rouge">$PATH</code>에 RubyGems 경로를 넣어서 해결했습니다. (<a href="https://guides.rubygems.org/faqs/#i-installed-gems-with---user-install-and-their-commands-are-not-available">참고</a>)</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">PATH</span><span class="o">=</span><span class="s2">"</span><span class="si">$(</span>ruby <span class="nt">-r</span> rubygems <span class="nt">-e</span> <span class="s1">'puts Gem.user_dir'</span><span class="si">)</span><span class="s2">/bin:</span><span class="nv">$PATH</span><span class="s2">"</span>
+</code></pre></div></div>
+
+<h2 id="bundler-could-not-find-compatible-versions-for-gem-jekyll">Bundler could not find compatible versions for gem “jekyll”</h2>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>jekyll <span class="nt">-v</span>
+Resolving dependencies...
+/Users/ooxo/.local/share/gem/ruby/3.0.0/gems/bundler-2.2.17/lib/bundler/resolver.rb:68:in <span class="sb">`</span>rescue <span class="k">in </span>start<span class="s1">': Bundler could not find compatible versions for gem "jekyll": (Bundler::VersionConflict)
+## 중략
+- `jekyll (~&gt; 3.8) arm64-darwin-20` required by `beautiful-jekyll-theme (5.0.0) (arm64-darwin-20)`
+## 후략
+</span></code></pre></div></div>
+
+<p>버젼 충돌을 일으키는 Gem을 <code class="language-plaintext highlighter-rouge">Gemfile</code>에서 찾아 삭제하여 해결했습니다.</p>
+
+<h2 id="you-have-already-activated-ffi-1151-but-your-gemfile-requires-ffi-1150">You have already activated ffi 1.15.1, but your Gemfile requires ffi 1.15.0.</h2>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>jekyll <span class="nt">-v</span>
+/Users/ooxo/.local/share/gem/ruby/3.0.0/gems/bundler-2.2.17/lib/bundler/runtime.rb:302:in <span class="sb">`</span>check_for_activated_spec!<span class="s1">': You have already activated ffi 1.15.1, but your Gemfile requires ffi 1.15.0. Prepending `bundle exec` to your command may solve this. (Gem::LoadError)
+## 후략
+</span></code></pre></div></div>
+
+<p>에러 메세지의 도움말처럼 <code class="language-plaintext highlighter-rouge">bundle exec</code>를 사용하여 해결했습니다.</p>
+
+<p>Jekyll의 <a href="https://jekyllrb.com/docs/">Quickstart</a> 페이지도 이를 권장하고 있습니다.</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bundle <span class="nb">exec </span>jekyll <span class="nt">-v</span>
+jekyll 4.2.0
+</code></pre></div></div>
+
+<p>혹은 <code class="language-plaintext highlighter-rouge">bundle update</code>를 사용하여 해결했습니다. (<a href="https://yehudakatz.com/2011/05/30/gem-versioning-and-bundler-doing-it-right/">참고</a>)</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bundle update
+Fetching gem metadata from https://rubygems.org/..........
+Resolving dependencies...
+<span class="c">## 중략</span>
+Bundle updated!
+
+<span class="nv">$ </span>jekyll <span class="nt">-v</span>
+jekyll 4.2.0
+</code></pre></div></div>
+
+<h2 id="cannot-load-such-file--webrick-loaderror">cannot load such file – webrick (LoadError)</h2>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bundle <span class="nb">exec </span>jekyll serve
+Configuration file: /Users/ooxo/code/eungook.github.io/_config.yml
+<span class="c">## 중략</span>
+/Users/ooxo/.local/share/gem/ruby/3.0.0/gems/jekyll-4.2.0/lib/jekyll/commands/serve/servlet.rb:3:in <span class="sb">`</span>require<span class="s1">': cannot load such file -- webrick (LoadError)
+</span></code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">webrick</code>을 <code class="language-plaintext highlighter-rouge">Gemfile</code>에 추가하여 해결했습니다.</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>bundle add webrick
+Fetching gem metadata from https://rubygems.org/..........
+<span class="c">## 중략</span>
+Using webrick 1.7.0
+<span class="c">## 후략</span>
+
+<span class="nv">$ </span>bundle <span class="nb">exec </span>jekyll serve
+<span class="c">## 정상 동작을 확인할 수 있습니다.</span>
+</code></pre></div></div>
+
+<h2 id="404-page-not-found--the-requested-page-could-not-be-found">404 Page not found :( The requested page could not be found.</h2>
+
+<p><strong>포스트 목록에는 뜨지만, 포스트 상세는 404 Page Not found가 뜹니다.</strong></p>
+
+<p>포스트 목록과 포스트 상세의 페이지 주소를 확인해주세요.</p>
+
+<p>제 경우는.. 포스트 목록의 주소는 <code class="language-plaintext highlighter-rouge">http://localhost:4000/</code> 로컬이었고,<br />
+포스트 상세의 페이지 주소는 <code class="language-plaintext highlighter-rouge">https://eungook.github.io/2021/05/19/1.html</code> 이었습니다.</p>
+
+<p>Jekyll 테마에 따라 포스트 상세의 주소가 상대경로로 되어 있기도 하고,
+<code class="language-plaintext highlighter-rouge">_config.yml</code>의 <code class="language-plaintext highlighter-rouge">url</code>을 참고한 절대경로로 되어 있기도 합니다.</p>
+
+<h2 id="page-build-failure">Page build failure</h2>
+
+<p>GitHub Pages의 주소로 접속이 안 되고, 아래와 같이 빌드 실패의 메일이 옵니다.</p>
+
+<blockquote>
+  <p>The page build failed for the <code class="language-plaintext highlighter-rouge">gh-pages</code> branch with the following error:</p>
+
+  <p>No <code class="language-plaintext highlighter-rouge">/docs</code> folder was found to build GitHub Pages. Check the source setting for this repository. For more information, see https://docs.github.com/github/working-with-github-pages/troubleshooting-jekyll-build-errors-for-github-pages-sites#missing-docs-folder. (후략)</p>
+</blockquote>
+
+<p>깃헙 리파지터리 설정을 확인해주세요.</p>
+
+<p>Settings&gt; Pages&gt; Source에서 브랜치와 폴더 설정을 다시 확인해줍시다.<br />
+제 경우는 브랜치는 <code class="language-plaintext highlighter-rouge">gh-pages</code>, 폴더는 <code class="language-plaintext highlighter-rouge">/(root)</code>로 설정하여 해결했습니다.</p>
+
+<h2 id="google-analytics-will-only-appear-in-production">Google Analytics will only appear in production</h2>
+
+<p>Jekyll의 기본 테마인 minima의 Google Analytics는 development 환경에서는 <a href="https://github.com/jekyll/minima#includes">동작하지 않도록</a> 되어 있습니다. 쉘의 환경변수를 <code class="language-plaintext highlighter-rouge">JEKYLL_ENV=production</code> 이렇게 설정하기를 <a href="https://github.com/jekyll/minima#enabling-google-analytics">권하는데요</a>, 번거롭습니다. 하여</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span><span class="o">(</span><span class="nb">export </span><span class="nv">JEKYLL_ENV</span><span class="o">=</span>production<span class="p">;</span> jekyll serve<span class="o">)</span>
+</code></pre></div></div>
+
+<p>이렇게 <a href="https://stackoverflow.com/a/10856211">인라인으로</a> 환경변수를 부여합시다.</p>]]></content><author><name>이은국</name></author><summary type="html"><![CDATA[warning: It seems your ruby installation is missing psych]]></summary></entry></feed>

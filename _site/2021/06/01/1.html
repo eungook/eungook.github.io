@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Promise 체인은 catch()에서 멈추지 않습니다. | eungook.github.io</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="Promise 체인은 catch()에서 멈추지 않습니다." />
+<meta name="author" content="이은국" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="안 되는건 아닌데, 작성 의도와 다르게 동작합니다. Promise 체인이 멈추지 않습니다.그래서 엄청 고생했었어요! T_T" />
+<meta property="og:description" content="안 되는건 아닌데, 작성 의도와 다르게 동작합니다. Promise 체인이 멈추지 않습니다.그래서 엄청 고생했었어요! T_T" />
+<link rel="canonical" href="https://eungook.github.io/2021/06/01/1.html" />
+<meta property="og:url" content="https://eungook.github.io/2021/06/01/1.html" />
+<meta property="og:site_name" content="eungook.github.io" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-06-01T16:04:00+09:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Promise 체인은 catch()에서 멈추지 않습니다." />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"이은국"},"dateModified":"2021-06-01T16:04:00+09:00","datePublished":"2021-06-01T16:04:00+09:00","description":"안 되는건 아닌데, 작성 의도와 다르게 동작합니다. Promise 체인이 멈추지 않습니다.그래서 엄청 고생했었어요! T_T","headline":"Promise 체인은 catch()에서 멈추지 않습니다.","mainEntityOfPage":{"@type":"WebPage","@id":"https://eungook.github.io/2021/06/01/1.html"},"url":"https://eungook.github.io/2021/06/01/1.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@latest/css/all.min.css">
+  <link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://eungook.github.io/feed.xml" title="eungook.github.io" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper">
+<a class="site-title" rel="author" href="/">eungook.github.io</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger">
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewbox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Promise 체인은 catch()에서 멈추지 않습니다.</h1>
+    <div class="post-meta">
+      <time class="dt-published" datetime="2021-06-01T16:04:00+09:00" itemprop="datePublished">
+        Jun 1, 2021
+      </time>
+
+      
+        <p class="post-subtitle">그러니까 promise.then().catch().then().catch()가 안 되는건 아닌데..</p>
+      
+    </div>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#%ED%8E%B8%EB%A6%AC%ED%95%9C-promise-%EC%B2%B4%EC%9D%B8-%EC%B5%9C%EA%B3%A0">편리한 Promise 체인 최고</a></li>
+<li class="toc-entry toc-h2"><a href="#%EC%97%AC%EA%B8%B0%EC%97%90-%ED%95%98%EB%82%98%EC%94%A9-catch%EB%A5%BC-%EB%84%A3%EC%96%B4%EB%B4%85%EC%8B%9C%EB%8B%A4">여기에 하나씩 catch()를 넣어봅시다</a></li>
+<li class="toc-entry toc-h2"><a href="#%EC%9D%B4%ED%95%B4%EB%A5%BC-%EC%9C%84%ED%95%B4-promise-%EC%B2%B4%EC%9D%B8%EC%9D%84-%EB%9C%AF%EC%96%B4%EB%B4%85%EC%8B%9C%EB%8B%A4">이해를 위해 Promise 체인을 뜯어봅시다</a></li>
+<li class="toc-entry toc-h2"><a href="#promise-%EC%B2%B4%EC%9D%B8%EC%9D%80-catch%EB%A5%BC-%ED%95%98%EB%82%98%EB%A7%8C-%EC%93%B8-%EA%B2%83%EC%9D%84-%EA%B6%8C%EC%9E%A5%ED%95%A9%EB%8B%88%EB%8B%A4">Promise 체인은 catch()를 하나만 쓸 것을 권장합니다</a></li>
+<li class="toc-entry toc-h2"><a href="#%EC%88%A8%EA%B2%A8%EC%A7%84-%EC%A3%BC%EC%A0%9C-%EC%84%9C%EB%A1%9C-%EB%8B%A4%EB%A5%B8-%EA%B3%B3%EC%97%90%EC%84%9C-%EB%B0%9C%EC%83%9D%ED%95%9C-%EC%97%90%EB%9F%AC-%EB%8B%A4%EB%A3%A8%EA%B8%B0">숨겨진 주제: 서로 다른 곳에서 발생한 에러 다루기</a></li>
+</ul>
+<p>안 되는건 아닌데, 작성 의도와 다르게 동작합니다. <strong>Promise 체인이 멈추지 않습니다.</strong><br>그래서 엄청 고생했었어요! T_T</p>
+
+<p>하여 Promise 체인의 실행 흐름과 접근 방법을 같이 알아보고,<br>끝으로 이 글의 <strong>숨겨진 주제</strong>를(???) 같이 읽어보겠습니다!</p>
+
+<h2 id="편리한-promise-체인-최고">
+<a class="anchor" href="#%ED%8E%B8%EB%A6%AC%ED%95%9C-promise-%EC%B2%B4%EC%9D%B8-%EC%B5%9C%EA%B3%A0" aria-hidden="true"><span class="octicon octicon-link"></span></a>편리한 Promise 체인 최고</h2>
+
+<p>너무 편합니다.</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">promise</span> <span class="o">=</span> <span class="nf">getResult</span><span class="p">();</span>
+<span class="nx">promise</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">response</span> <span class="o">=&gt;</span> <span class="nx">response</span><span class="p">.</span><span class="nf">json</span><span class="p">())</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">data</span> <span class="o">=&gt;</span> <span class="nf">makeAsyncList</span><span class="p">(</span><span class="nx">data</span><span class="p">))</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">list</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">list</span> <span class="p">}));</span>
+</code></pre></div></div>
+
+<h2 id="여기에-하나씩-catch를-넣어봅시다">
+<a class="anchor" href="#%EC%97%AC%EA%B8%B0%EC%97%90-%ED%95%98%EB%82%98%EC%94%A9-catch%EB%A5%BC-%EB%84%A3%EC%96%B4%EB%B4%85%EC%8B%9C%EB%8B%A4" aria-hidden="true"><span class="octicon octicon-link"></span></a>여기에 하나씩 catch()를 넣어봅시다</h2>
+
+<p>이런 느낌이겠죠?</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">promise</span> <span class="o">=</span> <span class="nf">getResult</span><span class="p">();</span>
+
+<span class="nx">promise</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">response</span> <span class="o">=&gt;</span> <span class="nx">response</span><span class="p">.</span><span class="nf">json</span><span class="p">())</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error1</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error1</span> <span class="p">}))</span>
+  
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">data</span> <span class="o">=&gt;</span> <span class="nf">makeAsyncList</span><span class="p">(</span><span class="nx">data</span><span class="p">))</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error2</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error2</span> <span class="p">}))</span>
+  
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">list</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">list</span> <span class="p">}))</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error3</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error3</span> <span class="p">}));</span>
+</code></pre></div></div>
+
+<p>문법 에러 없이 잘 동작합니다. 하지만 <code class="language-plaintext highlighter-rouge">작성 의도</code>와는 다르게 동작합니다.</p>
+
+<p>error1이, 혹은 error2가 발생한다면 이 <strong>Promise 체인이 멈추길 기대합니다.</strong><br>하지만 <code class="language-plaintext highlighter-rouge">멈추지 않고</code>, 맨 마지막의 list가 출력됩니다. 정상적이지 않은 데이터로요.</p>
+
+<h2 id="이해를-위해-promise-체인을-뜯어봅시다">
+<a class="anchor" href="#%EC%9D%B4%ED%95%B4%EB%A5%BC-%EC%9C%84%ED%95%B4-promise-%EC%B2%B4%EC%9D%B8%EC%9D%84-%EB%9C%AF%EC%96%B4%EB%B4%85%EC%8B%9C%EB%8B%A4" aria-hidden="true"><span class="octicon octicon-link"></span></a>이해를 위해 Promise 체인을 뜯어봅시다</h2>
+
+<p>이런 느낌이 될 것 같습니다.</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">promise</span> <span class="o">=</span> <span class="nf">getResult</span><span class="p">();</span>
+
+<span class="kd">const</span> <span class="nx">promise2</span> <span class="o">=</span> <span class="nx">promise</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">response</span> <span class="o">=&gt;</span> <span class="nx">response</span><span class="p">.</span><span class="nf">json</span><span class="p">())</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error1</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error1</span> <span class="p">}));</span>
+
+<span class="kd">const</span> <span class="nx">promise3</span> <span class="o">=</span> <span class="nx">promise2</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">data</span> <span class="o">=&gt;</span> <span class="nf">makeAsyncList</span><span class="p">(</span><span class="nx">data</span><span class="p">))</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error2</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error2</span> <span class="p">}));</span>
+
+<span class="kd">const</span> <span class="nx">promise4</span> <span class="o">=</span> <span class="nx">promise3</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">list</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">list</span> <span class="p">}))</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error3</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error3</span> <span class="p">}));</span>
+</code></pre></div></div>
+
+<p>위를 이해하기 위해 우선 알아야 하는 것이 있습니다.<br><code class="language-plaintext highlighter-rouge">Promise.then()</code>과  <code class="language-plaintext highlighter-rouge">Promise.catch()</code>는 <code class="language-plaintext highlighter-rouge">Promise</code>를 리턴합니다. (<a href="https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Global_Objects/Promise/then#%EC%84%A4%EB%AA%85" target="_blank" rel="noopener noreferrer">참고</a>)</p>
+
+<p>따라서 Promise 체인이 가능한 것이고,<br>따라서 위처럼 Promise 체인을 한 조각씩 뜯어볼 수 있습니다.</p>
+
+<p>하여 이제는 명확합니다. 실행흐름에 있어 <code class="language-plaintext highlighter-rouge">catch()</code>는 실행 흐름을 멈추지 않습니다.<br>그래서.. 그러면..?</p>
+
+<h2 id="promise-체인은-catch를-하나만-쓸-것을-권장합니다">
+<a class="anchor" href="#promise-%EC%B2%B4%EC%9D%B8%EC%9D%80-catch%EB%A5%BC-%ED%95%98%EB%82%98%EB%A7%8C-%EC%93%B8-%EA%B2%83%EC%9D%84-%EA%B6%8C%EC%9E%A5%ED%95%A9%EB%8B%88%EB%8B%A4" aria-hidden="true"><span class="octicon octicon-link"></span></a>Promise 체인은 catch()를 하나만 쓸 것을 권장합니다</h2>
+
+<p>이런 식으로요! (<a href="https://developer.mozilla.org/ko/docs/Web/JavaScript/Guide/Using_promises#error_propagation" target="_blank" rel="noopener noreferrer">참고</a>)</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">promise</span> <span class="o">=</span> <span class="nf">getResult</span><span class="p">();</span>
+<span class="nx">promise</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">response</span> <span class="o">=&gt;</span> <span class="nx">response</span><span class="p">.</span><span class="nf">json</span><span class="p">())</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">data</span> <span class="o">=&gt;</span> <span class="nf">makeAsyncList</span><span class="p">(</span><span class="nx">data</span><span class="p">))</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">list</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">list</span> <span class="p">}))</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error</span> <span class="p">}));</span>
+</code></pre></div></div>
+
+<p>Promise 체인 맨 아래에 <code class="language-plaintext highlighter-rouge">catch()</code> 단 하나를 둬서 <code class="language-plaintext highlighter-rouge">체인 속 모든 reject</code>를 여기서 처리하게 합니다.<br>이 실행흐름은 <code class="language-plaintext highlighter-rouge">try-catch</code>와 닮았습니다. (<a href="https://developer.mozilla.org/ko/docs/Web/JavaScript/Guide/Using_promises#error_propagation" target="_blank" rel="noopener noreferrer">참고</a>)</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">async</span> <span class="kd">function</span> <span class="nf">foo</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">try</span> <span class="p">{</span>
+    <span class="kd">const</span> <span class="nx">response</span> <span class="o">=</span> <span class="k">await</span> <span class="nf">getResult</span><span class="p">();</span>
+    <span class="kd">const</span> <span class="nx">data</span> <span class="o">=</span> <span class="k">await</span> <span class="nx">response</span><span class="p">.</span><span class="nf">json</span><span class="p">();</span>
+    <span class="kd">const</span> <span class="nx">list</span> <span class="o">=</span> <span class="k">await</span> <span class="nf">makeAsyncList</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">list</span> <span class="p">});</span>
+    
+  <span class="p">}</span> <span class="k">catch</span><span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error</span> <span class="p">});</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>이제 <code class="language-plaintext highlighter-rouge">reject</code>가 발생하면 남은 Promise 체인을 건너 뛰고, 맨 아래의 <code class="language-plaintext highlighter-rouge">catch()</code>가 실행됩니다.<br>Promise 체인을 멈추는 데에 성공했습니다! (예이~! ^^)</p>
+
+<h2 id="숨겨진-주제-서로-다른-곳에서-발생한-에러-다루기">
+<a class="anchor" href="#%EC%88%A8%EA%B2%A8%EC%A7%84-%EC%A3%BC%EC%A0%9C-%EC%84%9C%EB%A1%9C-%EB%8B%A4%EB%A5%B8-%EA%B3%B3%EC%97%90%EC%84%9C-%EB%B0%9C%EC%83%9D%ED%95%9C-%EC%97%90%EB%9F%AC-%EB%8B%A4%EB%A3%A8%EA%B8%B0" aria-hidden="true"><span class="octicon octicon-link"></span></a>숨겨진 주제: 서로 다른 곳에서 발생한 에러 다루기</h2>
+
+<p>그럼 이제 새로운 고민이 생깁니다.<br>서로 다른 곳에서 발생한 서로 다른 에러를 한 곳에서 솜씨좋게 다뤄야 합니다. scope가 너무 넓은거죠.<br>아.. if문이 많이 필요할 것 같아요! (T_T)</p>
+
+<p>하여 선배님들은? 여기서 <code class="language-plaintext highlighter-rouge">instanceof</code>를 쓰기로 하였어요! (<a href="https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Global_Objects/Error#example_handling_a_specific_error" target="_blank" rel="noopener noreferrer">참고1</a>, <a href="https://stackoverflow.com/questions/1382107/whats-a-good-way-to-extend-error-in-javascript" target="_blank" rel="noopener noreferrer">참고2</a>)</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">const</span> <span class="nx">promise</span> <span class="o">=</span> <span class="nf">getResult</span><span class="p">();</span>
+<span class="nx">promise</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">response</span> <span class="o">=&gt;</span> <span class="nx">response</span><span class="p">.</span><span class="nf">json</span><span class="p">())</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">data</span> <span class="o">=&gt;</span> <span class="nf">makeAsyncList</span><span class="p">(</span><span class="nx">data</span><span class="p">))</span>
+  <span class="p">.</span><span class="nf">then</span><span class="p">(</span><span class="nx">list</span> <span class="o">=&gt;</span> <span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">list</span> <span class="p">}))</span>
+  <span class="p">.</span><span class="k">catch</span><span class="p">(</span><span class="nx">error</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  	<span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">({</span> <span class="nx">error</span> <span class="p">});</span>
+  
+		<span class="k">if </span><span class="p">(</span><span class="nx">error</span> <span class="k">instanceof</span> <span class="nx">ReferenceError</span><span class="p">)</span> <span class="p">{</span>
+			<span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="dl">'</span><span class="s1">ReferenceError!</span><span class="dl">'</span><span class="p">);</span>
+			
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if </span><span class="p">(</span><span class="nx">error</span> <span class="k">instanceof</span> <span class="nx">TypeError</span><span class="p">)</span> <span class="p">{</span>
+    	<span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="dl">'</span><span class="s1">TypeError!</span><span class="dl">'</span><span class="p">);</span>
+    
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if </span><span class="p">(</span><span class="nx">error</span> <span class="k">instanceof</span> <span class="nx">MyError</span><span class="p">)</span> <span class="p">{</span>
+    	<span class="nx">console</span><span class="p">.</span><span class="nf">log</span><span class="p">(</span><span class="dl">'</span><span class="s1">MyError!</span><span class="dl">'</span><span class="p">);</span> <span class="c1">// Custom Error Types</span>
+    <span class="p">}</span>
+  <span class="p">});</span>
+</code></pre></div></div>
+
+<p>자바스크립트가 함수형 언어이면서도 동시에 객체지향 프로그래밍인 덕분이네요!<br>그런데 이 부분이 그래서 우리가 아는 <code class="language-plaintext highlighter-rouge">if</code>, <code class="language-plaintext highlighter-rouge">switch-case</code>와 뭐가 다른걸까요?</p>
+
+<p>…를! 알아가는 과정이 아마 객체지향 프로그래밍을 알아가는 과정일 것 같습니다.<br>하여, 이 글은 여기에서 끝입니다! (잉?ㅎㅎㅎㅎㅎㅎㅎ)</p>
+
+  </div>
+
+  <script src="https://utteranc.es/client.js" repo="eungook/eungook.github.io" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+  <a class="u-url" href="/2021/06/01/1.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/%20/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">eungook.github.io</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">이은국</li>
+<li><a class="u-email" href="mailto:yi.eungook@gmail.com">yi.eungook@gmail.com</a></li>
+</ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+<ul class="social-media-list">
+<li>
+    <a rel="me noopener noreferrer" href="https://github.com/eungook" target="_blank" title="GitHub">
+      <span class="grey fa-brands fa-github fa-lg"></span>
+    </a>
+  </li>
+<li>
+    <a rel="me noopener noreferrer" href="https://twitter.com/_______eungook" target="_blank" title="Twitter">
+      <span class="grey fa-brands fa-twitter fa-lg"></span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>웹 개발자(프로그래머) 이은국 블로그 입니다. 변수명은 세 단어 이상으로 길어지지 않으려고 합니다.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

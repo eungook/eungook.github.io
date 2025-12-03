@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>ssh key 여러개 사용하기 | eungook.github.io</title>
+<meta name="generator" content="Jekyll v4.4.1" />
+<meta property="og:title" content="ssh key 여러개 사용하기" />
+<meta name="author" content="이은국" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="하고 싶었던 것" />
+<meta property="og:description" content="하고 싶었던 것" />
+<link rel="canonical" href="https://eungook.github.io/2021/12/07/1.html" />
+<meta property="og:url" content="https://eungook.github.io/2021/12/07/1.html" />
+<meta property="og:site_name" content="eungook.github.io" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-12-07T13:54:00+09:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="ssh key 여러개 사용하기" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"이은국"},"dateModified":"2021-12-07T13:54:00+09:00","datePublished":"2021-12-07T13:54:00+09:00","description":"하고 싶었던 것","headline":"ssh key 여러개 사용하기","mainEntityOfPage":{"@type":"WebPage","@id":"https://eungook.github.io/2021/12/07/1.html"},"url":"https://eungook.github.io/2021/12/07/1.html"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@latest/css/all.min.css">
+  <link rel="stylesheet" href="/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://eungook.github.io/feed.xml" title="eungook.github.io" />
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper">
+<a class="site-title" rel="author" href="/">eungook.github.io</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger">
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewbox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"></path>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">ssh key 여러개 사용하기</h1>
+    <div class="post-meta">
+      <time class="dt-published" datetime="2021-12-07T13:54:00+09:00" itemprop="datePublished">
+        Dec 7, 2021
+      </time>
+
+      
+        <p class="post-subtitle">그런데 host를 곁들인</p>
+      
+    </div>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#%ED%95%98%EA%B3%A0-%EC%8B%B6%EC%97%88%EB%8D%98-%EA%B2%83">하고 싶었던 것</a></li>
+<li class="toc-entry toc-h2"><a href="#sshconfig-%EB%A5%BC-%EC%82%AC%EC%9A%A9%ED%95%B4%EB%B4%85%EB%8B%88%EB%8B%A4">~/.ssh/config 를 사용해봅니다</a></li>
+<li class="toc-entry toc-h2"><a href="#%EC%A6%89-ssh%EB%A1%9C-%EC%97%B0%EA%B2%B0%ED%95%B4%EC%95%BC-%ED%95%A9%EB%8B%88%EB%8B%A4">즉 ssh로 연결해야 합니다.</a></li>
+<li class="toc-entry toc-h2"><a href="#error-invalid-sha1-pointer--error-bad-ref-for">error: invalid sha1 pointer | error: bad ref for</a></li>
+<li class="toc-entry toc-h2"><a href="#%EB%A7%88%EC%B9%98%EB%A9%B0">마치며</a></li>
+</ul>
+<h2 id="하고-싶었던-것">
+<a class="anchor" href="#%ED%95%98%EA%B3%A0-%EC%8B%B6%EC%97%88%EB%8D%98-%EA%B2%83" aria-hidden="true"><span class="octicon octicon-link"></span></a>하고 싶었던 것</h2>
+
+<p>github과 gitlab의 ssh key를 서로 다르게 가져가고 싶었습니다.<br>
+하지만 깃에서 사용하는 ssh key는 OS 레벨에서 관리되기 때문에? 간단하지 않았습니다.</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>% git config <span class="nt">--list</span>
+credential.helper<span class="o">=</span>osxkeychain
+</code></pre></div></div>
+
+<p>어.. 이렇게 쓰고 보니까 <code class="language-plaintext highlighter-rouge">credential.helper</code>를 잘 다룰 줄 알았더라면 좀 더 빨리 끝냈을 것 같네요 (u_u );;</p>
+
+<h2 id="sshconfig-를-사용해봅니다">
+<a class="anchor" href="#sshconfig-%EB%A5%BC-%EC%82%AC%EC%9A%A9%ED%95%B4%EB%B4%85%EB%8B%88%EB%8B%A4" aria-hidden="true"><span class="octicon octicon-link"></span></a>~/.ssh/config 를 사용해봅니다</h2>
+
+<p>먼저 ssh key를 적당히 하나 만들고, <code class="language-plaintext highlighter-rouge">~/.ssh/config</code>를 수정해봅니다</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>% <span class="nb">cat</span> ~/.ssh/config 
+Host git-codecommit.<span class="k">*</span>.amazonaws.com
+User <span class="k">****</span>
+IdentityFile ~/.ssh/id_rsa
+
+<span class="c"># **** Account Identity</span>
+Host gitlab.com
+  Hostname gitlab.com
+  PreferredAuthentications publickey
+  IdentityFile ~/.ssh/id_rsa_<span class="k">****</span> <span class="c"># 적당히 하나 만든 ssh key</span>
+</code></pre></div></div>
+
+<p>이렇게 하면 <code class="language-plaintext highlighter-rouge">gitlab.com</code> 에 대한 ssh 관련 접근에 적당히 하나 만든 키를 사용하게 됩니다.</p>
+
+<ul>
+  <li>참고<br>
+<a href="https://man.openbsd.org/ssh_config" target="_blank" rel="noopener noreferrer">man ssh_config: OpenBSD manual pages</a><br>
+<a href="https://docs.gitlab.com/ee/ssh/#configure-ssh-to-point-to-a-different-directory" target="_blank" rel="noopener noreferrer">Configure SSH to point to a different directory: GitLab</a>
+</li>
+</ul>
+
+<h2 id="즉-ssh로-연결해야-합니다">
+<a class="anchor" href="#%EC%A6%89-ssh%EB%A1%9C-%EC%97%B0%EA%B2%B0%ED%95%B4%EC%95%BC-%ED%95%A9%EB%8B%88%EB%8B%A4" aria-hidden="true"><span class="octicon octicon-link"></span></a>즉 ssh로 연결해야 합니다.</h2>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>% git config remote.origin.url <span class="s1">'https://gitlab.com/****/****.git'</span>
+% git fetch
+remote: The project you were looking <span class="k">for </span>could not be found or you don<span class="s1">'t have permission to view it.
+</span></code></pre></div></div>
+
+<p>이러면 안 되고,</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>% git config remote.origin.url <span class="s1">'git@gitlab.com:****/****.git'</span>
+% git fetch
+fatal: bad object refs/heads/main 2
+error: <span class="k">****</span>.gitlab.com:<span class="k">****</span>/<span class="k">****</span>.git이<span class="o">(</span>가<span class="o">)</span> 모든 필요한 오브젝트를 보내지 않았습니다 <span class="c"># did not send all necessary objects</span>
+</code></pre></div></div>
+
+<p>어.. 왜 안 될까요;;<br>
+찾아보니 이건 다른 문제였습니다.</p>
+
+<h2 id="error-invalid-sha1-pointer--error-bad-ref-for">
+<a class="anchor" href="#error-invalid-sha1-pointer--error-bad-ref-for" aria-hidden="true"><span class="octicon octicon-link"></span></a>error: invalid sha1 pointer | error: bad ref for</h2>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>% git fsck <span class="nt">--full</span>
+오브젝트 디렉터리를 확인하는 중입니다: 100% <span class="o">(</span>256/256<span class="o">)</span>, 완료.
+오브젝트를 확인합니다: 100% <span class="o">(</span>39445/39445<span class="o">)</span>, 완료.
+error: refs/heads/main 2: invalid sha1 pointer 0000000000000000000000000000000000000000
+error: bad ref <span class="k">for</span> .git/logs/refs/heads/main 2
+</code></pre></div></div>
+
+<p>에러나는 파일인 <code class="language-plaintext highlighter-rouge">.git/refs/heads/main 2</code>, <code class="language-plaintext highlighter-rouge">.git/logs/refs/heads/main 2</code> 를 삭제하여 해결했습니다.</p>
+
+<ul>
+  <li>참고<br>
+<a href="https://stackoverflow.com/a/37740711" target="_blank" rel="noopener noreferrer">This means my pack file is no corrupted but some refs are invalid: Stack Overflow</a><br>
+<a href="https://stackoverflow.com/a/8817602" target="_blank" rel="noopener noreferrer">“did not send all necessary objects” is the manifestation of the error, not the error itself: Stack Overflow</a>
+</li>
+</ul>
+
+<h2 id="마치며">
+<a class="anchor" href="#%EB%A7%88%EC%B9%98%EB%A9%B0" aria-hidden="true"><span class="octicon octicon-link"></span></a>마치며</h2>
+
+<p>아 역시 <code class="language-plaintext highlighter-rouge">git config</code>의 <a href="https://git-scm.com/docs/git-config#Documentation/git-config.txt-credentialhelper" target="_blank" rel="noopener noreferrer">credential</a>을 사용하는게 더 자연스러울 것 같아요!</p>
+
+
+  </div>
+
+  <script src="https://utteranc.es/client.js" repo="eungook/eungook.github.io" issue-term="pathname" theme="github-light" crossorigin="anonymous" async>
+  </script>
+
+  <a class="u-url" href="/2021/12/07/1.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/%20/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">eungook.github.io</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">이은국</li>
+<li><a class="u-email" href="mailto:yi.eungook@gmail.com">yi.eungook@gmail.com</a></li>
+</ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+<ul class="social-media-list">
+<li>
+    <a rel="me noopener noreferrer" href="https://github.com/eungook" target="_blank" title="GitHub">
+      <span class="grey fa-brands fa-github fa-lg"></span>
+    </a>
+  </li>
+<li>
+    <a rel="me noopener noreferrer" href="https://twitter.com/_______eungook" target="_blank" title="Twitter">
+      <span class="grey fa-brands fa-twitter fa-lg"></span>
+    </a>
+  </li>
+</ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>웹 개발자(프로그래머) 이은국 블로그 입니다. 변수명은 세 단어 이상으로 길어지지 않으려고 합니다.</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
